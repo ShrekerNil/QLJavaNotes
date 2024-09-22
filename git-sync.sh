@@ -130,10 +130,10 @@ fi
 
 print_start_line
 echo_info "Pulling ${cur_dir} from Gitee ..."
-result=`git pull gitee main`
+result=`git pull gitee master`
 judgement "git pull" $? "$result"
 
-# Push to github main
+# Push to github master
 if [[ $need_push -eq 1 ]]; then
     print_start_line
     echo_info "Pushing Local Changes to Github Remote: ${cur_dir}"
@@ -147,7 +147,7 @@ fi
 if [[ $need_push -eq 1 ]]; then
     print_start_line
     echo_info "Pushing Local Changes to Gitee Remote: ${cur_dir}"
-    result=`git push -f gitee main`
+    result=`git push -f gitee master`
     judgement "git push" $? "$result"
 else
     echo_info "Nothing to push, Skipping ..."
