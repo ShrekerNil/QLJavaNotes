@@ -1,0 +1,140 @@
+Hadoop2.4.0  ���±��� 64  λ���ؿ�
+����������� VirtualBox������ϵͳ 64 λ CentOS 6.4
+�������±�����Ҫ�������
+apache-ant-1.9.4-bin.tar.gz
+findbugs-3.0.0.tar.gz
+protobuf-2.5.0.tar.gz
+apache-maven-3.0.5-bin.tar.gz
+���� hadoop2.4.0 ��Դ���
+hadoop-2.4.0-src.tar.gz
+ѹ��Դ���
+[grid@hadoopMaster01 ~]$ tar -zxvf hadoop-2.4.0-src.tar.gz
+��װ�����������
+��װ MAVEN
+ѹ�� apache-maven-3.0.5-bin.tar.gz ��/opt/Ŀ¼
+[root@hadoopMaster01 grid]# tar -zxvf apache-maven-3.0.5-bin.tar.gz -C /opt/
+�޸�/etc/profile ���ã����� MAVEN ��������
+�����ʹ�� source /etc/profile ʹ�޸����ü�ʱ��Ч
+[root@hadoopMaster01 apache-maven-3.0.5]# source /etc/profile
+ʹ�� mvn -v ���������֤����ͼ��ʾ��ʾ��װ���óɹ�
+��װ ANT
+ѹ�� apache-ant-1.9.4-bin.tar.gz ��/opt/Ŀ¼
+[root@hadoopMaster01 grid]# tar -zxvf apache-ant-1.9.4-bin.tar.gz -C /opt/
+�޸�/etc/profile ���ã����� ANT ��������
+�����ʹ�� source /etc/profile ʹ�޸����ü�ʱ��Ч
+[root@hadoopMaster01 apache-ant-1.9.4]# source /etc/profile
+ʹ�� ant-version ���������֤����ͼ��ʾ��ʾ��װ���óɹ�
+��װ FINDBUGS
+ѹ�� findbugs-3.0.0.tar.gz ��/opt/Ŀ¼
+[root@hadoopMaster01 grid]# tar -zxvf findbugs-3.0.0.tar.gz -C /opt/
+�޸�/etc/profile ���ã����� FINDBUGS ��������
+�����ʹ�� source /etc/profile ʹ�޸����ü�ʱ��Ч
+[root@hadoopMaster01 apache-ant-1.9.4]# source /etc/profile
+ʹ�� findbugs-version ���������֤����ͼ��ʾ��ʾ��װ���óɹ�
+��װ PROTOBUF
+���� Hadoop 2.4.0����Ҫ protobuf �ı�����protoc��һ��Ҫ�� protobuf 2.5.0 ����
+ֱ��ѹ�� protobuf-2.5.0.tar.gz
+[root@hadoopMaster01 grid]# tar -zxvf protobuf-2.5.0.tar.gz
+��װ protobuf������ִ����������
+[root@hadoopMaster01 grid]# cdprotobuf-2.5.0
+[root@hadoopMaster01 protobuf-2.5.0]# ls
+aclocal.m4 config.guess configure COPYING.txt examples
+install-sh ltmain.sh Makefile.in protobuf.pc.in src
+autogen.sh config.h.in configure.ac depcomp generate_descriptor_proto.sh
+INSTALL.txt m4 missing python vsprojects
+CHANGES.txt config.sub CONTRIBUTORS.txt editors gtest
+java Makefile.am protobuf-lite.pc.in README.txt
+[root@hadoopMaster01 protobuf-2.5.0]# ./configure
+[root@hadoopMaster01 protobuf-2.5.0]# make
+[root@hadoopMaster01 protobuf-2.5.0]# make check
+[root@hadoopMaster01 protobuf-2.5.0]# make install
+ʹ�� protoc --version ���������֤����ͼ��ʾ��ʾ��װ���óɹ�
+��װ ������
+��װ cmake,openssl-devel,ncurses-devel  ������(root  �û����ܹ����ϻ�����)
+[root@hadoopMaster01 ~]# yum install cmake
+
+[root@hadoopMaster01 ~]# yum install openssl-devel
+
+[root@hadoopMaster01 ~]# yum install ncurses-devel
+
+���� 64  λ���ؿ�
+������ѹ��� hadoop Դ��Ŀ¼
+[grid@hadoopMaster01 ~]$ cd hadoop-2.4.0-src
+[grid@hadoopMaster01 hadoop-2.4.0-src]$ pwd
+/home/grid/hadoop-2.4.0-src
+ִ�� mvn cleaninstall-DskipTests ����ȴ����(���Զ��������غܶණ��)
+[grid@hadoopMaster01 hadoop-2.4.0-src]$ mvnclean install -DskipTests
+ִ�� mvn package -Pdist,native -DskipTests -Dtar �����ʼ���룬�ȴ����
+grid@hadoopMaster01 hadoop-2.4.0-src]$ mvn package -Pdist,native -DskipTests -Dtar
+����������Ϣ
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary:
+[INFO]
+[INFO] Apache Hadoop Main ................................ SUCCESS[6.304s]
+[INFO] Apache Hadoop Project POM ......................... SUCCESS [26.555s]
+[INFO] Apache Hadoop Annotations ......................... SUCCESS[2.757s]
+[INFO] Apache Hadoop Assemblies .......................... SUCCESS [0.216s]
+[INFO] Apache Hadoop Project Dist POM .................... SUCCESS [19.592s]
+[INFO] Apache Hadoop Maven Plugins ....................... SUCCESS [2.715s]
+[INFO] Apache Hadoop MiniKDC ............................. SUCCESS [2.360s]
+[INFO] Apache Hadoop Auth ................................ SUCCESS [2.950s]
+[INFO] Apache Hadoop Auth Examples ....................... SUCCESS[2.119s]
+[INFO] Apache Hadoop Common .............................. SUCCESS [1:22.302s]
+[INFO] Apache Hadoop NFS ................................. SUCCESS [5.095s]
+[INFO] Apache Hadoop Common Project...................... SUCCESS [0.026s]
+[INFO] Apache Hadoop HDFS ................................ SUCCESS [2:06.178s]
+[INFO] Apache Hadoop HttpFS .............................. SUCCESS [1:09.142s]
+[INFO] Apache Hadoop HDFS BookKeeper Journal ............. SUCCESS [14.457s]
+[INFO] Apache Hadoop HDFS-NFS ............................SUCCESS [2.859s]
+[INFO] Apache Hadoop HDFS Project ........................ SUCCESS [0.030s]
+[INFO] hadoop-yarn ....................................... SUCCESS [0.029s]
+[INFO] hadoop-yarn-api ................................... SUCCESS [59.010s]
+[INFO] hadoop-yarn-common ................................ SUCCESS [20.743s]
+[INFO] hadoop-yarn-server ................................ SUCCESS[0.026s]
+[INFO] hadoop-yarn-server-common ......................... SUCCESS [7.344s]
+[INFO] hadoop-yarn-server-nodemanager .................... SUCCESS [11.726s]
+[INFO] hadoop-yarn-server-web-proxy ...................... SUCCESS [2.508s]
+[INFO] hadoop-yarn-server-applicationhistoryservice ...... SUCCESS [4.041s]
+[INFO] hadoop-yarn-server-resourcemanager ................ SUCCESS [10.370s]
+[INFO] hadoop-yarn-server-tests .......................... SUCCESS [0.374s]
+[INFO] hadoop-yarn-client ................................ SUCCESS [4.791s]
+[INFO] hadoop-yarn-applications .......................... SUCCESS [0.025s]
+[INFO] hadoop-yarn-applications-distributedshell ......... SUCCESS [2.242s]
+[INFO] hadoop-yarn-applications-unmanaged-am-launcher .... SUCCESS [1.553s]
+[INFO] hadoop-yarn-site .................................. SUCCESS [0.024s]
+[INFO] hadoop-yarn-project ............................... SUCCESS [3.261s]
+[INFO] hadoop-mapreduce-client ........................... SUCCESS [0.082s]
+[INFO] hadoop-mapreduce-client-core ...................... SUCCESS [18.549s]
+[INFO] hadoop-mapreduce-client-common .................... SUCCESS [13.772s]
+[INFO] hadoop-mapreduce-client-shuffle ................... SUCCESS [2.441s]
+[INFO] hadoop-mapreduce-client-app ....................... SUCCESS [6.866s]
+[INFO] hadoop-mapreduce-client-hs ........................ SUCCESS [6.280s]
+[INFO] hadoop-mapreduce-client-jobclient .................SUCCESS [3.510s]
+[INFO] hadoop-mapreduce-client-hs-plugins ................ SUCCESS [1.725s]
+[INFO] Apache Hadoop MapReduce Examples .................. SUCCESS [4.641s]
+[INFO] hadoop-mapreduce .................................. SUCCESS[3.002s]
+[INFO] Apache Hadoop MapReduce Streaming ................. SUCCESS [3.497s]
+[INFO] Apache Hadoop Distributed Copy .................... SUCCESS [5.847s]
+[INFO] Apache Hadoop Archives ............................ SUCCESS [1.791s]
+[INFO] Apache Hadoop Rumen ............................... SUCCESS [4.693s]
+[INFO] Apache Hadoop Gridmix ............................. SUCCESS [3.235s]
+[INFO] Apache Hadoop Data Join........................... SUCCESS [2.349s]
+[INFO] Apache Hadoop Extras .............................. SUCCESS [2.488s]
+[INFO] Apache Hadoop Pipes ............................... SUCCESS [5.863s]
+[INFO] Apache Hadoop OpenStack support ................... SUCCESS [3.776s]
+[INFO] Apache Hadoop Client .............................. SUCCESS [5.235s]
+[INFO] Apache Hadoop Mini-Cluster ........................ SUCCESS [0.070s]
+[INFO] Apache Hadoop Scheduler Load Simulator ............ SUCCESS [3.935s]
+[INFO] Apache Hadoop Tools Dist .......................... SUCCESS [4.392s]
+[INFO] Apache Hadoop Tools ............................... SUCCESS [0.022s]
+[INFO] Apache Hadoop Distribution ........................ SUCCESS [21.274s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 10:25.147s
+[INFO] Finished at: Mon Jul 28 16:09:56 CST 2014
+[INFO] Final Memory: 75M/241M
+[INFO] ------------------------------------------------------------------------
+��ʾ����ɹ�
+����/home/grid/hadoop-2.4.0-src/hadoop-dist/target/hadoop-2.4.0/lib/native ��飬ʹ�� file *��
+��

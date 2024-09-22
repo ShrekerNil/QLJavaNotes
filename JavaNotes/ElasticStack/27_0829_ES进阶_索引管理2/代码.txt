@@ -1,0 +1,173 @@
+#index template 索引模板
+
+# 7.9
+POST /_index_template/template_logs
+{
+  "index_patterns": [
+    "logs-*"
+  ],
+  "priority": 1,
+  "template": {
+    "mappings": {
+      "properties": {
+        "test": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+DELETE _template/template_1
+PUT _template/template_1
+{
+  "index_patterns": [
+    "logs-*"
+  ],
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "test":{
+        "type": "text",
+        "meta": {
+          "这是一个标记": "证明了我来自template"
+        }
+      }
+    }
+  }
+}
+
+
+GET logs-000002/_mapping
+
+
+
+
+
+
+
+
+#*********************************************************************
+# stats
+# docker stats
+GET product/_stats
+
+POST product/_refresh
+
+
+PUT /index
+{
+   "settings": {
+       "refresh_interval": "10s"
+   }
+}
+
+GET index/_search
+POST /index/_refresh
+PUT index/_doc/2
+{
+  "name":"sasdasdad"
+}
+# segments
+GET index/_segments
+GET .kibana/_segments
+GET test1/_search
+PUT test1/_doc/1
+{
+  "name":"test_name"
+}
+
+
+
+POST /index/_flush
+DELETE test1
+PUT /test1
+{
+  "settings": {
+    "refresh_interval": "15s",
+    "number_of_shards": 3, 
+    "number_of_replicas": 2
+  }
+}
+PUT test1/_doc/2
+{
+  "name":"test_name"
+}
+PUT test1/_doc/3
+{
+  "name":"test_name"
+}
+
+GET test1/_mapping
+ 
+ 
+# shard
+GET test1/_shard_stores?status=green
+
+# flush
+PUT /test2
+{
+  "settings": {
+    "refresh_interval": "15s"
+  }
+}
+
+
+PUT test2/_doc/1
+{
+  "name":"test_name"
+}
+POST test2/_flush
+GET test2/_stats
+GET test2/_segments
+POST test2/_cache/clear
+
+# force merge 合并segment
+
+
+
+
+
+#
+POST test2/_forcemerge
+
+
+# circuit breaker 断路器 保险丝
+# 总开关
+# indices.breaker.total.use_real_memory：true-以实际堆内存为准 false-只考虑子断路器
+# indices.breaker.total.limit：堆内存阈值 默认70% 或 95%
+
+# fielddata断路器 熔断
+# indices.breaker.fielddata.limit：40%  V7.0之前是60%
+# indices.breaker.fielddata.overhead：估值常数 默认1.03
+# 所有fielddata的实际内存消耗都将乘以这个值 目的？比如你的汽车测速
+
+# request断路器 request circuit breaker 聚合使用的内存阈值
+# indices.breaker.request.limit：默认60% 
+# indices.breaker.request.overhead：估值常数 默认1
+
+# 请求本身断路器 in flight request circuit breaker，http或者transport过来的请求本身占用的内存阈值
+# network.breaker.inflight_requests.limit：默认100%
+# network.breaker.inflight_requests.overhead 估值常数默认是2
+
+# Accounting requests circuit breaker：请求结束后不能释放的对象所占用的内存
+# indices.breaker.accounting.limit：默认100%
+# indices.breaker.accounting.overhead：默认1
+
+# Script compilation circuit breaker：限制不是设置内存阈值 而是次数
+# script.max_compilations_rate：默认每分钟15次
+
+
+
+
+#plugin 
+# 安装 sudo bin/elasticsearch-plugin install [plugin_name]
+# 例如 sudo bin/elasticsearch-plugin install analysis-icu
+# URL安装 sudo bin/elasticsearch-plugin install [url]
+# sudo bin/elasticsearch-plugin install [plugin_id][plugin_id]
+# 强制插件依赖：plugin.mandatory: analysis-icu,lang-js 如果节点未安装，节点无法启动
+# 查看已安装插件：sudo bin/elasticsearch-plugin list
+# 删除已安装插件：sudo bin/elasticsearch-plugin remove [pluginname]
+# 插件删除需要重启节点
+# 插件绑定版本 如果升级ES 需要重新安装插件

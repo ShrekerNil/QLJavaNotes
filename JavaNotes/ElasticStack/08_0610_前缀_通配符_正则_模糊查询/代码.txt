@@ -1,0 +1,462 @@
+#前缀搜索
+POST /my_index/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "城管打电话喊商贩去摆摊摊" }
+{ "index": { "_id": "2"} }
+{ "text": "笑果文化回应商贩老农去摆摊" }
+{ "index": { "_id": "3"} }
+{ "text": "老农耗时17年种出椅子树" }
+{ "index": { "_id": "4"} }
+{ "text": "夫妻结婚30多年AA制,被城管抓" }
+{ "index": { "_id": "5"} }
+{ "text": "黑人见义勇为阻止抢劫反被铐住" }
+
+GET my_index/_search
+GET my_index/_search
+{
+  "query": {
+    "prefix": {
+      "text": {
+        "value": "城管"
+      }
+    }
+  }
+}
+
+
+
+GET /_analyze
+{
+  "text": "城管打电话喊商贩去摆摊摊",
+  "analyzer": "standard"
+}
+
+
+
+POST /my_index/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "my english" }
+{ "index": { "_id": "2"} }
+{ "text": "my english is good" }
+{ "index": { "_id": "3"} }
+{ "text": "my chinese is good" }
+{ "index": { "_id": "4"} }
+{ "text": "my japanese is nice" }
+{ "index": { "_id": "5"} }
+{ "text": "my disk is full" }
+
+GET my_index/_search
+GET /_analyze
+{
+  "text": "my chinese is good",
+  "analyzer": "standard"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "prefix": {
+      "text": "ch"
+    }
+  }
+}
+
+#设置默认的 启动索引 加快前缀搜索速度
+
+
+PUT my_index
+{
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "index_prefixes": {
+          "min_chars":2,
+          "max_chars":4
+        }    
+      }
+    }
+  }
+}
+
+#通配符
+GET my_index/_search
+GET my_index/_mapping
+GET my_index/_search
+{
+  "query": {
+    "wildcard": {
+      "text": {
+        "value": "eng?ish"
+      }
+    }
+  }
+}
+GET product/_search
+GET product/_mapping
+GET product/_search
+{
+  "query": {
+    "wildcard": {
+      "name": {
+        "value": "xia?mi"
+      }
+    }
+  }
+}
+GET product/_search
+{
+  "query": {
+    "wildcard": {
+      "name.keyword": {
+        "value": "xiaomi*nfc*",
+        "boost": 1.0
+      }
+    }
+  }
+}
+
+#正则
+GET product/_search
+GET product/_search
+{
+  "query": {
+    "regexp": {
+      "name": {
+        "value": "[\\s\\S]*nfc[\\s\\S]*",
+        "flags": "ALL",
+        "max_determinized_states": 10000,
+        "rewrite": "constant_score"
+      }
+    }
+  }
+}
+
+GET product/_search
+#为什么没有结果
+GET product/_search
+{
+  "query": {
+    "regexp": {
+      "desc": {
+        "value": ".*2020-05-20.*",
+        "flags": "ALL"
+      }
+    }
+  }
+}
+GET product/_mapping
+GET /_analyze
+{
+  "text": "shouji zhong 2020-05-20 de zhandouji",
+  "analyzer": "ik_max_word"
+}
+
+PUT my_index
+{
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word"
+          
+      }
+    }
+  }
+}
+GET /my_index/_search
+PUT /my_index/_doc/1
+{
+  "testid":"123456",
+  "text":"shouji zhong 2020-05-20 de zhandouji"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "regexp": {
+      "text": {
+        "value": ".*<1-4>.*",
+        "flags": "INTERVAL"
+      }
+    }
+  }
+}
+
+
+
+
+GET product/_search
+GET product/_search
+{
+  "query": {
+    "regexp": {
+      "desc": {
+        "value": ".*zh~eng.*",
+        "flags": "INTERVAL"
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+#fuzzy
+
+GET /product/_search 
+GET /product/_search 
+{
+  "query": {
+    "fuzzy": {
+      "desc": {
+        "value": "quangemneng",
+        "fuzziness": 5
+      }
+    }
+  }
+}
+
+GET /product/_search
+{
+  "query": {
+    "match": {
+      "desc": {
+        "query": "quangengneng nfc",
+        "fuzziness": "AUTO"
+      }
+    }
+  }
+}
+
+
+#match_phrase_prefix讲解
+GET /product/_search
+
+#参数
+GET /product/_search
+GET /product/_search
+{
+  "query": {
+    "match_phrase_prefix": {
+      "desc": {
+        "query": "zhichi quangongneng nf",
+        "analyzer": "whitespace",
+        "max_expansions": 1,
+        "slop": 2,
+        "boost": 1
+      }
+    }
+  }
+}
+
+#match_phrase_prefix和前缀搜索区别
+GET product/_search
+GET  /product/_search
+{
+  "query": {
+    "match_phrase": {
+      "name": "xiaomi"
+    }
+  }
+}
+
+GET  /product/_search
+{
+  "query": {
+    "match_phrase_prefix": {
+      "desc": "shouji zh"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+GET /product/_search
+{
+  "query": {
+    "match_phrase_prefix": {
+      "desc": {
+        "query": "de zhong shouji  hongzhaji",
+        "max_expansions": 50,
+        "slop": 4
+      }
+    }
+  }
+}
+#source:   zhong de hongzhaji
+#query :   zhong hongzhaji
+#query :   zhong  > hongzhaji
+
+# shouji zhong de hongzhaji
+# de zhong shouji  hongzhaji
+# shouji/de zhong shouji  hongzhaji  2次
+# shouji zhong de shouji  hongzhaji  2次 共4次
+
+
+GET product/_search
+GET product/_search
+{
+  "query": {
+    "prefix": {
+      "name": {
+        "value": "xiaomi nfc"
+      }
+    }
+  }
+}
+
+
+#ngram   min_gram =1   "max_gram": 2
+
+
+
+
+
+
+GET _analyze
+{
+  "tokenizer": "ik_max_word",
+  "filter": [ "edge_ngram" ],
+  "text": "reba always loves me"
+}
+
+#min_gram =1   "max_gram": 1
+#r a l m
+
+#min_gram =1   "max_gram": 2
+#r a l m
+#re al lo me
+
+#min_gram =2   "max_gram": 3
+#re al lo me
+#reb alw lov me
+
+
+
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "2_3_edge_ngram": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 3
+        }
+      },
+      "analyzer": {
+        "my_edge_ngram": {
+          "type":"custom",
+          "tokenizer": "standard",
+          "filter": [ "2_3_edge_ngram" ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "analyzer":"my_edge_ngram",
+        "search_analyzer": "standard"
+      }
+    }
+  }
+}
+GET /my_index/_mapping
+
+
+POST /my_index/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "my english" }
+{ "index": { "_id": "2"} }
+{ "text": "my english is good" }
+{ "index": { "_id": "3"} }
+{ "text": "my chinese is good" }
+{ "index": { "_id": "4"} }
+{ "text": "my japanese is nice" }
+{ "index": { "_id": "5"} }
+{ "text": "my disk is full" }
+
+
+GET /my_index/_search
+GET /my_index/_mapping
+GET /my_index/_search
+{
+  "query": {
+    "match_phrase": {
+      "text": "my eng is goo"
+    }
+  }
+}
+
+
+
+PUT my_index2
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "2_3_grams": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 3
+        }
+      },
+      "analyzer": {
+        "my_edge_ngram": {
+          "type":"custom",
+          "tokenizer": "standard",
+          "filter": [ "2_3_grams" ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "analyzer":"my_edge_ngram",
+        "search_analyzer": "standard"
+      }
+    }
+  }
+}
+GET /my_index2/_mapping
+POST /my_index2/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "my english" }
+{ "index": { "_id": "2"} }
+{ "text": "my english is good" }
+{ "index": { "_id": "3"} }
+{ "text": "my chinese is good" }
+{ "index": { "_id": "4"} }
+{ "text": "my japanese is nice" }
+{ "index": { "_id": "5"} }
+{ "text": "my disk is full" }
+
+GET /my_index2/_search
+{
+  "query": {
+    "match_phrase": {
+      "text": "my eng is goo"
+    }
+  }
+}
+
+GET _analyze
+{
+  "tokenizer": "ik_max_word",
+  "filter": [ "ngram" ],
+  "text": "用心做皮肤,用脚做游戏"
+}

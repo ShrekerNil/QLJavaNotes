@@ -1,0 +1,177 @@
+1.׼��Linux����
+	1.0�Ƚ������������ģʽѡΪNAT
+		
+	1.1�޸�������
+		vi /etc/sysconfig/network
+		
+		NETWORKING=yes
+		HOSTNAME=itcast    ###
+
+	1.2�޸�IP
+		���ַ�ʽ��
+		��һ�֣�ͨ��Linuxͼ�ν�������޸ģ�ǿ���Ƽ���
+			����Linuxͼ�ν��� -> �Ҽ�������Ϸ�������С���� -> ���Edit connections -> ѡ�е�ǰ����System eth0 -> ���edit��ť -> ѡ��IPv4 -> methodѡ��Ϊmanual -> ���add��ť -> ���IP��192.168.1.101 �������룺255.255.255.0 ���أ�192.168.1.1 -> apply
+	
+		�ڶ��֣��޸������ļ���ʽ����˿����Գר�ã�
+			vim /etc/sysconfig/network-scripts/ifcfg-eth0
+			
+			DEVICE="eth0"
+			BOOTPROTO="static"               ###
+			HWADDR="00:0C:29:3C:BF:E7"
+			IPV6INIT="yes"
+			NM_CONTROLLED="yes"
+			ONBOOT="yes"
+			TYPE="Ethernet"
+			UUID="ce22eeca-ecde-4536-8cc2-ef0dc36d4a8c"
+			IPADDR="192.168.1.101"           ###
+			NETMASK="255.255.255.0"          ###
+			GATEWAY="192.168.1.1"            ###
+			
+	1.3�޸���������IP��ӳ���ϵ
+		vim /etc/hosts
+			
+		192.168.1.101	itcast
+	
+	1.4�رշ���ǽ
+		#�鿴����ǽ״̬
+		service iptables status
+		#�رշ���ǽ
+		service iptables stop
+		#�鿴����ǽ��������״̬
+		chkconfig iptables --list
+		#�رշ���ǽ��������
+		chkconfig iptables off
+	1.5 �޸�sudo
+		su root
+		vim /etc/sudoers
+		��hadoop�û����ִ�е�Ȩ��
+
+�ر�linux��������ͼ�ν��棺
+vi /etc/inittab 	
+	1.5����Linux
+		reboot
+2.��װJDK
+	2.1�ϴ�alt+p �����sftp���ڣ�Ȼ��put d:\xxx\yy\ll\jdk-7u_65-i585.tar.gz
+	
+	2.2��ѹjdk
+		#�����ļ���
+		mkdir /home/hadoop/app
+		#��ѹ
+		tar -zxvf jdk-7u55-linux-i586.tar.gz -C /home/hadoop/app
+		
+	2.3��java��ӵ�����������
+		vim /etc/profile
+		#���ļ�������
+		export JAVA_HOME=/home/hadoop/app/jdk-7u_65-i585
+		export PATH=$PATH:$JAVA_HOME/bin
+	
+		#ˢ������
+		source /etc/profile
+		
+3.��װhadoop2.4.1
+	���ϴ�hadoop�İ�װ������������ȥ/home/hadoop/
+	ע�⣺hadoop2.x�������ļ�$HADOOP_HOME/etc/hadoop
+	α�ֲ�ʽ��Ҫ�޸�5�������ļ�
+	3.1����hadoop
+	��һ����hadoop-env.sh
+		vim hadoop-env.sh
+		#��27��
+		export JAVA_HOME=/usr/java/jdk1.7.0_65
+		
+	�ڶ�����core-site.xml
+
+		<!-- ָ��HADOOP��ʹ�õ��ļ�ϵͳschema��URI����HDFS���ϴ�NameNode���ĵ�ַ -->
+		<property>
+			<name>fs.defaultFS</name>
+			<value>hdfs://weekend-1206-01:9000</value>
+		</property>
+		<!-- ָ��hadoop����ʱ�����ļ��Ĵ洢Ŀ¼ -->
+		<property>
+			<name>hadoop.tmp.dir</name>
+			<value>/home/hadoop/hadoop-2.4.1/tmp</value>
+        </property>
+		
+	��������hdfs-site.xml   
+		<!-- ָ��HDFS���������� -->
+		<property>
+			<name>dfs.replication</name>
+			<value>1</value>
+		</property>
+		
+		<property>
+			<name>dfs.secondary.http.address</name>
+			<value>192.168.1.152:50090</value>
+		</property>
+		
+	���ĸ���mapred-site.xml (mv mapred-site.xml.template mapred-site.xml)
+		mv mapred-site.xml.template mapred-site.xml
+		vim mapred-site.xml
+		<!-- ָ��mr������yarn�� -->
+		<property>
+			<name>mapreduce.framework.name</name>
+			<value>yarn</value>
+		</property>
+		
+	�������yarn-site.xml
+		<!-- ָ��YARN���ϴ�ResourceManager���ĵ�ַ -->
+		<property>
+			<name>yarn.resourcemanager.hostname</name>
+			<value>weekend-1206-01</value>
+		</property>
+		<!-- reducer��ȡ���ݵķ�ʽ -->
+		<property>
+			<name>yarn.nodemanager.aux-services</name>
+			<value>mapreduce_shuffle</value>
+		</property>
+     	
+	3.2��hadoop��ӵ���������
+	
+	vim /etc/proflie
+		export JAVA_HOME=/usr/java/jdk1.7.0_65
+		export HADOOP_HOME=/itcast/hadoop-2.4.1
+		export PATH=$PATH:$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+
+	source /etc/profile
+	
+	3.3��ʼ��namenode
+		hdfs namenode -format (hadoop namenode -format)
+		
+	3.4����hadoop
+        1. �༭<hadoop-home>/etc/hadoop/slaves,���������ip������������(�����hosts�����õĻ�)
+		2. ִ������ִ�нű�
+            - ������HDFS��<hadoop-home>/sbin/start-dfs.sh
+            - ������YARN��<hadoop-home>/sbin/start-yarn.sh
+        3. ע�⣬����ǵ���������һ��datanode��namenode���Զ�ʶ�𣬲���ӵ���ǰ�ļ�Ⱥ����֮��
+                ���������ȫ��������ʱ��Ͳ���������̨��������Ҫ��slave������֮��Ż���Ч
+        		
+	3.5��֤�Ƿ������ɹ�
+		ʹ��jps������֤
+		27408 NameNode
+		28218 Jps
+		27643 SecondaryNameNode
+		28066 NodeManager
+		27803 ResourceManager
+		27512 DataNode
+	
+		http://192.168.1.101:50070 ��HDFS������棩
+		http://192.168.1.101:8088 ��MR������棩
+		
+4.����ssh���½
+	#����ssh���½��Կ
+	#���뵽�ҵ�homeĿ¼
+	cd ~/.ssh
+
+	ssh-keygen -t rsa ���ĸ��س���
+	ִ�����������󣬻����������ļ�id_rsa��˽Կ����id_rsa.pub����Կ��
+	����Կ������Ҫ���ܵ�½��Ŀ�������
+	ssh-copy-id localhost
+	---------------------------
+	ssh���½��
+		����key:
+		ssh-keygen
+		���ƴ�A���Ƶ�B��:
+		ssh-copy-id B
+		��֤��
+		ssh localhost/exit��ps -e|grep ssh
+		ssh A  #��B��ִ��
+	

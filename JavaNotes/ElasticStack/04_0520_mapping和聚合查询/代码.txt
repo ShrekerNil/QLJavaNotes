@@ -1,0 +1,526 @@
+GET /product/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+GET /product/_search?q=-xiaomi
+
+GET /product/_mapping
+
+GET /product/_search
+GET /product/_search?q=date:2020
+#query_string的问题 不是全文检索 
+GET /product/_search
+{
+    "query" : {
+        "match" : {
+            "date" : "2020"
+        }
+    }
+}
+
+GET /_analyze
+{
+  "analyzer": "standard",
+  "text": ["2020-5-19"]
+}
+#Dynamic mapping
+PUT /product_mapping/_doc/1
+{
+  "name": "xiaomi phone",
+  "desc": "shouji zhong de zhandouji",
+  "count": 123456,
+  "price": 123.123,
+  "date": "2020-05-20",
+  "isdel": false,
+  "tags": [
+    "xingjiabi",
+    "fashao",
+    "buka"
+  ]
+}
+
+#(3)搜索方式：
+GET /product/_search?q=date:2020-05-20
+#_all搜索 会把fields拼接成一个长字符串 然后全文检索
+GET /product/_search?q=2020-05-20
+#验证一下date类型是exact value
+POST /product/_doc/1/_update
+{
+  "doc": {
+    "desc": "shouji zhong 2020-05-20 de zhandouji"
+  }
+}
+#再验证一下keyword exact value
+GET /product/_search
+{
+    "query" : {
+        "match" : {
+            "name.keyword": "xiaomi"
+        }
+    }
+}
+
+
+#(5)手工创建mapping（fields的mapping只能创建，无法修改）
+#语法
+PUT /product/_mapping
+{
+  "properties": {
+    "date": {
+      "type": "text"
+    }
+  }
+}
+#(7) 1 index
+#案例
+PUT /product3
+{
+  "mappings": {
+    "properties": {
+      "date": {
+        "type": "text"
+      },
+      "desc": {
+        "type": "text",
+        "analyzer": "english"
+      },
+      "name": {
+        "type": "text",
+        "index": "false"
+      },
+      "price": {
+        "type": "long"
+      },
+      "tags": {
+        "type": "text",
+        "index": "true"
+      },
+      "parts": {
+        "type": "object"
+      },
+      "partlist": {
+        "type": "nested"
+      }
+    }
+  }
+}
+#插入数据
+PUT /product3/_doc/1
+{
+  "name": "xiaomi phone",
+  "desc": "shouji zhong de zhandouji",
+  "count": 123456,
+  "price": 3999,
+  "date": "2020-05-20",
+  "isdel": false,
+  "tags": [
+    "xingjiabi",
+    "fashao",
+    "buka"
+  ],
+  "parts": {
+    "name": "adapter",
+    "desc": "5V 2A"
+  },
+  "partlist": [
+    {
+      "name": "adapter",
+      "desc": "5V 2A"
+    },
+    {
+      "name": "USB-C",
+      "desc": "5V 2A 1.5m"
+    },
+    {
+      "name": "erji",
+      "desc": "boom"
+    }
+  ]
+}
+#查看
+GET /product3/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+#验证
+GET /product3/_search
+{
+  "query": {
+    "match": {
+      "name": "xiaomi"
+    }
+  }
+}
+
+#7 copy_to
+PUT copy_to
+{
+  "mappings": {
+    "properties": {
+      "field1": {
+        "type": "text",
+        "copy_to": "field_all" 
+      },
+      "field2": {
+        "type": "text",
+        "copy_to": "field_all" 
+      },
+      "field_all": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+PUT copy_to/_doc/1
+{
+  "field1": "field1",
+  "field2": "field2"
+}
+GET copy_to/_search
+GET copy_to/_search
+{
+  "query": {
+    "match": {
+      "field_all": { 
+        "query": "field1 field2"
+      }
+    }
+  }
+}
+
+#(7) ④ coerce：是否允许强制类型转换
+PUT coerce
+{
+  "mappings": {
+    "properties": {
+      "number_one": {
+        "type": "integer"
+      },
+      "number_two": {
+        "type": "integer",
+        "coerce": false
+      }
+    }
+  }}
+PUT coerce/_doc/1
+{
+  "number_one": "10" 
+}
+#//拒绝，因为设置了false
+PUT my_index/_doc/2
+{
+  "number_two": "10" 
+}  
+
+PUT coerce
+{
+  "settings": {
+    "index.mapping.coerce": false
+  },
+  "mappings": {
+    "properties": {
+      "number_one": {
+        "type": "integer",
+        "coerce": true
+      },
+      "number_two": {
+        "type": "integer"
+      }
+    }
+  }
+  
+}
+PUT coerce/_doc/1
+{ 
+  "number_one": "10" 
+  
+} 
+#拒绝，因为设置了false
+PUT coerce/_doc/2
+{
+  "number_two": "10" 
+  
+} 
+
+PUT /product/_mapping
+{
+  "properties": {
+    "date": {
+      "type": "text"
+    }
+  }
+}
+
+#7- 7 
+PUT dynamic
+{
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "user": {
+        "properties": {
+          "date": {
+            "type": "text"
+          },
+          "desc": {
+            "type": "text",
+            "analyzer": "english"
+          },
+          "name": {
+            "type": "text",
+            "index": "false"
+          },
+          "price": {
+            "type": "long"
+          }
+        }
+      }
+    }
+  }
+}
+#search_analyzer 查询时分词器
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        }
+      },
+      "analyzer": {
+        "autocomplete": { 
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "autocomplete_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "analyzer": "autocomplete", 
+        "search_analyzer": "standard" 
+      }
+    }
+  }}
+PUT my_index/_doc/1
+{
+  "text": "Quick Brown Fox" 
+}
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "text": {
+        "query": "Quick Br",
+        "operator": "and"
+      }
+    }
+  }
+}
+
+#7-11 
+GET /product/_mapping
+#给city创建一个keyword
+PUT fields_test
+{
+  "mappings": {
+    "properties": {
+      "city": {
+        "type": "text",
+        "fields": {
+          "raw": { 
+            "type":  "keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+PUT fields_test/_doc/1
+{
+  "city": "New York"
+}
+
+PUT fields_test/_doc/2
+{
+  "city": "York"
+}
+
+GET fields_test/_search
+{
+  "query": {
+    "match": {
+      "city": "york" 
+    }
+  },
+  "sort": {
+    "city.raw": "asc" 
+  },
+  "aggs": {
+    "Cities": {
+      "terms": {
+        "field": "city.raw" 
+      }
+    }
+  }
+}
+
+#忽略类型错误
+
+PUT ignore_malformed
+{
+  "mappings": {
+    "properties": {
+      "number_one": {
+        "type": "integer",
+        "ignore_malformed": true
+      },
+      "number_two": {
+        "type": "integer"
+      }
+    }
+  }}
+PUT my_index/_doc/1
+{
+  "text":       "Some text value",
+  "number_one": "foo" 
+  
+}   
+#//虽然有异常 但是不抛出
+PUT my_index/_doc/2
+{
+  "text":       "Some text value",
+  "number_two": "foo" 
+  
+}   
+#//数据格式不对	
+
+
+#fielddata
+PUT /product/_mapping
+{
+  "properties": {
+    "name": {
+      "type": "text",
+      "fielddata": false
+    }
+  }
+}
+
+
+#每个tag产品的数量   "size":0, 不显示原始结果
+GET /product/_search
+{
+  "aggs": {
+    "tag_agg_group": {
+      "terms": {
+        "field": "tags.keyword"
+      }
+    }
+  },
+  "size":0
+}
+GET /product/_mapping
+#将文本field的fielddata属性设置为true
+PUT /product/_mapping
+{
+  "properties": {
+    "tags": {
+      "type": "text",
+      "fielddata": true
+    }
+  }
+}
+#价格大于1999的每个tag产品的数量
+GET /product/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {"price": {"gt": 1999}}
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "tag_agg_group": {
+      "terms": {
+        "field": "tags.keyword"
+      }
+    }
+  },
+  "size": 0
+}
+
+#平均价格
+GET /product/_search
+{
+  "aggs": {
+    "tag_agg_avg": {
+      "terms": {
+        "field": "tags.keyword",
+        "order": {
+          "avg_price": "desc"
+        }
+      },
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  },
+  "size":0
+}
+
+
+#按照千元机 1000以下  中端机[2000-3000) 高端机 [3000,∞）
+GET /product/_search
+{
+  "aggs": {
+    "tag_agg_group": {
+      "range": {
+        "field": "price",
+        "ranges": [
+          {
+            "from": 100,
+            "to": 1000
+          },
+          {
+            "from": 1000,
+            "to": 3000
+          },
+          {
+            "from": 3000
+          }
+        ]
+      },
+      "aggs": {
+        "price_agg": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}

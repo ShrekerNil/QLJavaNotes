@@ -1,0 +1,522 @@
+PUT /product/_doc/1
+{
+    "name" : "小米手机",
+    "desc" :  "手机中的战斗机",
+    "price" :  3999,
+    "lv":"旗舰机",
+    "type":"手机",
+    "createtime":"2020-10-01T08:00:00Z",
+    "tags": [ "性价比", "发烧", "不卡顿" ]
+}
+PUT /product/_doc/2
+{
+    "name" : "小米NFC手机",
+    "desc" :  "支持全功能NFC，手机中的滑翔机",
+    "price" :  4999,
+        "lv":"旗舰机",
+    "type":"手机",
+    "createtime":"2020-05-21T08:00:00Z",
+    "tags": [ "性价比", "发烧", "公交卡" ]
+}
+PUT /product/_doc/3
+{
+    "name" : "NFC手机",
+    "desc" :  "手机中的轰炸机",
+    "price" :  2999,
+        "lv":"高端机",
+    "type":"手机",
+    "createtime":"2020-06-20",
+    "tags": [ "性价比", "快充", "门禁卡" ]
+}
+PUT /product/_doc/4
+{
+    "name" : "小米耳机",
+    "desc" :  "耳机中的黄焖鸡",
+    "price" :  999,
+        "lv":"百元机",
+    "type":"耳机",
+    "createtime":"2020-06-23",
+    "tags": [ "降噪", "防水", "蓝牙" ]
+}
+PUT /product/_doc/5
+{
+    "name" : "红米耳机",
+    "desc" :  "耳机中的肯德基",
+    "price" :  399,
+    "type":"耳机",
+        "lv":"百元机",
+    "createtime":"2020-07-20",
+    "tags": [ "防火", "低音炮", "听声辨位" ]
+}
+PUT /product/_doc/6
+{
+    "name" : "小米手机10",
+    "desc" :  "充电贼快掉电更快，超级无敌望远镜，高刷电竞屏",
+    "price" :  5999,
+        "lv":"旗舰机",
+    "type":"手机",
+    "createtime":"2020-07-27",
+    "tags": [ "120HZ刷新率", "120W快充", "120倍变焦" ]
+}
+PUT /product/_doc/7
+{
+    "name" : "挨炮 SE2",
+    "desc" :  "除了CPU，一无是处",
+    "price" :  3299,
+        "lv":"旗舰机",
+    "type":"手机",
+    "createtime":"2020-07-21",
+    "tags": [ "割韭菜", "割韭菜", "割新韭菜" ]
+}
+PUT /product/_doc/8
+{
+    "name" : "XS Max",
+    "desc" :  "听说要出新款12手机了，终于可以换掉手中的4S了",
+    "price" :  4399,
+        "lv":"旗舰机",
+    "type":"手机",
+    "createtime":"2020-08-19",
+    "tags": [ "5V1A", "4G全网通", "大" ]
+}
+PUT /product/_doc/9
+{
+    "name" : "小米电视",
+    "desc" :  "70寸性价比只选，不要一万八，要不要八千八，只要两千九百九十八",
+    "price" :  2998,
+        "lv":"高端机",
+    "type":"电视",
+    "createtime":"2020-08-16",
+    "tags": [ "巨馍", "家庭影院", "游戏" ]
+}
+PUT /product/_doc/10
+{
+    "name" : "红米电视",
+    "desc" :  "我比上边那个更划算，我也2998，我也70寸，但是我更好看",
+    "price" :  2999,
+    "type":"电视",
+        "lv":"高端机",
+    "createtime":"2020-08-28",
+    "tags": [ "大片", "蓝光8K", "超薄" ]
+}
+PUT /product/_doc/11
+{
+  "name": "红米电视",
+  "desc": "我比上边那个更划算，我也2998，我也70寸，但是我更好看",
+  "price": "2998",
+  "type": "电视",
+  "lv": "高端机",
+  "createtime": "2020-08-28",
+  "tags": [
+    "大片",
+    "蓝光8K",
+    "超薄"
+  ]
+}
+
+
+GET /product/_search
+#ES 进阶课  深入讲解 ES聚合分析 
+#bucket metric
+GET product/_search?size=0
+{
+  "aggs": {
+    "tag_avg_price":{
+      "terms":{
+        "field":"tags.keyword",
+        "order": {
+          "_key": "asc"
+        }
+      },
+      "aggs":{
+        "agg_price":{
+          "avg":{
+            "field":"price"
+          }
+        }
+      }
+    }
+  }
+}
+#_count：按文档数排序。对 terms 、 histogram 、 date_histogram 有效。
+#_term ：按词项的字符串值的字母顺序排序。只在 terms 内使用。
+#_key：按每个桶的键值数值排序（理论上与 _term 类似）。 只在 histogram 和 date_histogram 内使用
+
+#聚合排序  
+GET product/_search?size=0
+{
+  "aggs": {
+    "tag_avg_price":{
+      "terms":{
+        "field":"tags.keyword",
+        "order": {
+          "agg_price": "asc"
+        }
+      },
+      "aggs":{
+        "agg_price":{
+          "avg":{
+            "field":"price"
+          }
+        }
+      }
+    }
+  }
+}
+
+GET product/_search
+#下钻分析 举个例子: 每个类型按照tag分组 计算平均价格
+GET product/_search?size=0
+{
+  "aggs": {
+    "avg_type": {
+      "terms": {
+        "field": "tags"
+      },
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+#原因 ：聚合分析的字段 一定打开doc value，否则打开fielddata =true(不推荐)
+DELETE product
+GET product/_mapping
+PUT product/_mapping
+{
+  "properties": {
+    "tags": {
+      "type": "text",
+      "fielddata": true
+    }
+  }
+}
+DELETE product
+GET /product/_mapping
+PUT product
+{
+  "mappings": {
+    "properties": {
+      "type": {
+        "type": "keyword",
+        "doc_values": true
+      },
+      "lv":{
+        "type": "keyword",
+        "doc_values": true
+      }
+    }
+  }
+}
+
+GET product/_search
+#global bucket
+GET product/_search?size=0
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "term": {
+          "type.keyword": "手机"
+        }
+      }
+    }
+  },
+  "aggs": {
+    "avg_price": {
+      "avg": {
+        "field": "price"
+      }
+    },
+    "group_tag": {
+      "global": {},
+      "aggs": {
+        "avg_tag": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+GET product/_search?size=0
+{
+  "aggs": {
+    "计算所有的": {
+      "global": {},
+      "aggs": {
+        "avg_tag": {
+          "filter": {
+            "term": {
+              "type.keyword": {
+                "value": "手机"
+              }
+            }
+          },
+          "aggs": {
+            "test": {
+              "avg": {
+                "field": "price"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#多桶排序 一级排序  耳机排序 order a  then by b
+GET product/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_avg_price": {
+      "terms": {
+        "field": "tags",
+        "order": {
+          "agg_stats>stats.sum": "esc"
+        }
+      },
+      "aggs": {
+        "agg_stats": {
+          "filter": {
+            "terms": {
+              "type.keyword": [
+                "耳机","手机","电视"
+              ]
+            }
+          },
+          "aggs": {
+            "stats": {
+              "extended_stats": {
+                "field": "price"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#到目前为止学过的metric：avg max min sum count 80%以上场景
+#ES天然是分布式的
+#易并行算法（max） 不易并行算法（count(distinct)）
+#三角选择原则 
+#精准 实时 大数据
+#三选二
+#实时 + 大数据 支持海量数据实时查询 <5%
+
+
+#需求：统计1000以下  1000-2000  2000-3000 以此类推、
+GET /product/_search?size=0
+{
+  "aggs": {
+    "tag_agg_group": {
+      "range": {
+        "field": "price",
+        "ranges": [
+          {
+            "from": 0,
+            "to": 1000
+          },
+          {
+            "from": 1000,
+            "to": 2000
+          },
+          {
+            "from": 2000,
+            "to": 3000
+          }
+        ]
+      },
+      "aggs": {
+        "rang_avg": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+#histogram
+GET product/_mapping
+GET /product/_search?size=0
+{
+  "aggs": {
+    "price_agg": {
+      "histogram": {
+        "field": "price",
+        "interval": 1000,
+        "min_doc_count": 1,
+        "keyed": true,
+        "missing": 4999
+      }
+    }
+  }
+}
+
+#missing: 将会把price值为空的结果变成4999 
+GET /product/_search?size=0
+{
+  "aggs": {
+    "price_agg": {
+      "histogram": {
+        "field": "price",
+        "interval": 1000,
+        "keyed": true,
+        "missing": 4999,
+        "extended_bounds": {
+          "min": 0,
+          "max": 10000
+        }
+      }
+    }
+  }
+}
+
+
+
+#histogram fields V7.9以上
+PUT histogram_fields_index/_doc/1
+{
+  "name" : "复仇者联盟4",
+  "score_detail" : {
+      "values" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "counts" : [200, 300, 400, 220, 150, 300, 480, 240, 750,690]
+   }
+}
+
+PUT histogram_fields_index/_doc/2
+{
+  "nname" : "速度与激情8",
+  "score_detail" : {
+      "values" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "counts" : [230, 340, 50, 120, 750, 200, 380, 40, 150,20]
+   }
+}
+
+PUT histogram_fields_index/_doc/3
+{
+  "name" : "白蛇传",
+  "score_detail" : {
+      "values" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "counts" : [230, 360, 100, 520, 120, 320, 30, 550, 250,620]
+   }
+}
+GET /histogram_fields_index/_search?size=0
+{
+  "aggs": {
+    "latency_buckets": {
+      "histogram": {
+        "field": "score_detail",
+        "interval": 2
+      }
+    }
+  }
+}
+{
+  ...
+  "aggregations": {
+    "prices": {
+      "buckets": [
+        {
+          "key": 0.0,
+          "doc_count": 1300
+        },
+        {
+          "key": 2.0,
+          "doc_count": 1410
+        },
+        {
+          "key": 4.0,
+          "doc_count": 1860
+        },
+        {
+          "key": 6.0,
+          "doc_count": 1720
+        },
+        {
+          "key": 8.0,
+          "doc_count": 2480
+        }
+      ]
+    }
+  }
+}
+
+#histogram-date
+GET product/_mapping
+POST /product/_search?size=0
+{
+  "aggs": {
+    "price_agg": {
+      "date_histogram": {
+        "field": "createtime",
+        "calendar_interval": "month",
+        "min_doc_count": 0,
+        "format": "yyyy-MM", 
+        "extended_bounds": {
+          "min": "2020-01",
+          "max": "2020-12"
+        }
+      }
+    }
+  }
+}
+
+
+#auto_data_histogram
+POST /product/_search?size=0
+{
+
+  "aggs": {
+    "price_agg": {
+      "auto_date_histogram": {
+        "field": "createtime",
+        "format": "yyyy-MM-dd",
+        "buckets":12
+      }
+    }
+  }
+}
+
+#cumulative_sum 只支持在auto_data_histogram data_histogram histogram
+#"min_doc_count": 0,
+POST /product/_search?size=0
+{
+  "aggs": {
+    "price_agg": {
+      "date_histogram": {
+        "field": "createtime",
+        "calendar_interval": "month",
+        "min_doc_count": 0,
+        "format": "yyyy-MM", 
+        "extended_bounds": {
+          "min": "2020-01",
+          "max": "2020-12"
+        }
+      },
+      "aggs": {
+        "sum_agg": {
+          "sum": {
+            "field": "price"
+          }
+        },
+        "asdasdasd":{
+          "cumulative_sum": {
+            "buckets_path": "sum_agg"
+          }
+        }
+        
+      }
+    }
+  }
+}

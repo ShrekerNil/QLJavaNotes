@@ -1,0 +1,155 @@
+GET /product/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+#doc values
+GET /product/_mapping
+#fielddata
+GET /product/_search
+{
+  "aggs": {
+    "tag_agg_group": {
+      "terms": {
+        "field": "tags"
+      }
+    }
+  },
+  "size":0
+}
+#设置mappging
+PUT /product/_mapping
+{
+  "properties": {
+    "tags": {
+      "type": "text",
+      "fielddata": false
+    }
+  }
+}
+
+#批量查询
+GET /_mget
+{
+  "docs": [
+    {
+      "_index": "product",
+      "_id": 2
+    },
+    {
+      "_index": "product",
+      "_id": 3
+    }
+  ]
+}
+#封装,把索引名(product提取出来)
+GET /product/_mget
+{
+  "docs": [
+    {
+      "_id": 2
+    },
+    {
+      "_id": 3
+    }
+  ]
+}
+#再封装
+GET /product/_mget
+{
+  "ids":[2,3]
+}
+#include包含哪些字段  exclude排除哪些字段
+GET /product/_mget
+{
+  "docs": [
+    {
+      "_id": 2,
+      "_source": false
+    },
+    {
+      "_id": 3,
+      "_source": [
+        "name",
+        "price"
+      ]
+    },
+    {
+      "_id": 4,
+      "_source": {
+        "include": [
+          "name"
+        ],
+        "exclude":[
+          "price"
+          ]
+      }
+    }
+  ]
+}
+
+#手动指定id和自动生成
+PUT /test_index/_doc/1/
+{
+  "field":"test"
+}
+PUT /test_index/_doc/1/_create
+{
+  "field":"test"
+}
+PUT /test_index/_create/1/
+{
+  "field":"test"
+}
+#自动生产id(guid)
+POST /test_index/_doc
+{
+  "field":"test"
+}
+GET /test_index/_search
+GET /test_index/_doc/1
+GET /product2/_search
+
+#不加?filter_path=items.*.error
+POST /_bulk
+{ "delete": { "_index": "product2",  "_id": "1" }}
+{ "create": { "_index": "product2",  "_id": "2" }}
+{ "name":    "_bulk create 2" }
+{ "create": { "_index": "product2",  "_id": "12" }}
+{ "name":    "_bulk create 12" }
+{ "index":  { "_index": "product2",  "_id": "3" }}
+{ "name":    "index product2 " }
+{ "index":  { "_index": "product2",  "_id": "13" }}
+{ "name":    "index product2" }
+{ "update": { "_index": "product2",  "_id": "4","retry_on_conflict" : "3"} }
+{ "doc" : {"test_field2" : "bulk test1"} }
+
+#加?filter_path=items.*.error  只显示失败的
+POST /_bulk?filter_path=items.*.error
+{ "delete": { "_index": "product2",  "_id": "1" }}
+{ "create": { "_index": "product2",  "_id": "2" }}
+{ "name":    "_bulk create 2" }
+{ "create": { "_index": "product2",  "_id": "12" }}
+{ "name":    "_bulk create 12" }
+{ "index":  { "_index": "product2",  "_id": "3" }}
+{ "name":    "index product2 " }
+{ "index":  { "_index": "product2",  "_id": "13" }}
+{ "name":    "index product2" }
+{ "update": { "_index": "product2",  "_id": "4","retry_on_conflict" : "3"} }
+{ "doc" : {"test_field2" : "bulk test1"} }
+
+
+#ES版本号
+PUT /version_index/_doc/1
+{
+  "title": "关关雎鸠,在河之洲"
+}
+GET /version_index/_search
+#第二个客户端也查询了
+PUT /version_index/_doc/1?version=2&&version_type=external
+{
+  "title": "窈窕淑女,君子好逑"
+}
+#if_seq_no` and `if_primary_term`
+

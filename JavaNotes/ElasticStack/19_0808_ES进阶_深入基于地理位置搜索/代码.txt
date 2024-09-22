@@ -1,0 +1,478 @@
+PUT geo_point
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "location": {
+        "type": "geo_point"
+      }
+    }
+  }
+}
+DELETE geo_point
+#第一种
+PUT geo_point/_doc/1
+{
+  "name": "天安门",
+  "location": { 
+    "lat": 40.12,
+    "lon": -71.34
+  }
+}
+#"lat,lon" 第二种
+PUT geo_point/_doc/2
+{
+  "name": "前门",
+  "location": "40.12,-72.34"
+}
+#[lon，lat]第三种
+PUT geo_point/_doc/3
+{
+  "name": "后门",
+  "location": [ -75.34,40.12]
+}
+#WKT
+PUT geo_point/_doc/2
+{
+  "name": "前门",
+  "location": "POINT (-72.34 40.12)"
+}
+#GEO哈希
+#Geo哈希 https://www.cnblogs.com/LBSer/p/3310455.html
+
+
+GET /geo_point/_mapping
+GET /geo_point/_search
+
+
+#geo_bounding box query
+GET /geo_point/_search
+{
+  "query": {
+    "geo_bounding_box":{
+      "location":{
+        "top_left":{
+          "lat": 50.73,
+          "lon": -74.1
+        },
+        "bottom_right":{
+          "lat": 30.01,
+          "lon": -61.12
+        }
+      }
+    }
+  }
+}
+
+##半径搜索
+
+#
+GET geo_point/_mapping
+GET /geo_point/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "geo_distance": {
+            "distance": "50km",
+            "location": {
+              "lat": 40,
+              "lon": -71
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+#多边形查找
+GET geo_point/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_all": {}
+        }
+      ],
+      "filter": [
+        {
+          "geo_polygon": {
+            "location": {
+              "points": [
+                {
+                  "lat": 40,
+                  "lon": -70
+                },
+                {
+                  "lat": 40,
+                  "lon": -71
+                },
+                {
+                  "lat": 50,
+                  "lon": -71.1
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+#排序
+GET geo_point/_mapping
+GET /geo_point/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "geo_distance": {
+            "distance": "500km",
+            "location": {
+              "lat": 40,
+              "lon": -71
+            }
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "_geo_distance": {
+        "location": {
+          "lat": 40,
+          "lon": -71
+        },
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+#geo_shape
+DELETE geo_shape
+GET geo_shape/_mapping
+PUT geo_shape
+{
+    "mappings": {
+        "properties": {
+            "location": {
+                "type": "geo_shape"
+            }
+        }
+    }
+}
+
+
+#储存一个点
+POST /geo_shape/_doc/1
+{
+  "name":"中国 香海",
+  "location":{
+    "type":"point",
+    "coordinates":[13.400544, 52.530286]
+  }
+}
+#WKT方式
+GET geo_shape/_doc/1
+POST /geo_shape/_doc/1
+{
+  "name":"中国 香海",
+  "location":"POINT (13.400544 52.530286)"
+}
+
+#储存一个线段
+POST /geo_shape/_doc/2
+{
+  "name":"随意",
+  "location":{
+    "type":"linestring",
+    "coordinates":[[13.400544, 52.530286],[-77.400544, 38.530286]]
+  }
+}
+#WKT
+POST /geo_shape/_doc/2
+{
+  "name": "随意",
+  "location":"LINESTRING (13.400544 52.530286,-77.400544 38.530286)"
+}
+
+
+POST /geo_shape/_doc/3
+{
+  "name": "河北省",
+  "location": {
+    "type": "polygon",
+    "coordinates": [
+      [
+        [
+          100,
+          0
+        ],
+        [
+          101,
+          0
+        ],
+        [
+          101,
+          1
+        ],
+        [
+          100,
+          1
+        ],
+        [
+          100,
+          0
+        ]
+      ],
+            [ [100.2, 0.2], [100.8, 0.2], [100.8, 0.8], [100.2, 0.8], [100.2, 0.2] ]
+    ]
+  }
+}
+
+#WKT 方式
+POST /geo_shape/_doc/3
+{
+    "location" : "POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))"
+}
+
+
+
+DELETE geo_point
+PUT _ingest/pipeline/polygonize_circles
+{
+  "description": "圆圈转换成多边形",
+  "processors": [
+    {
+      "circle": {
+        "field": "location",
+        "error_distance": 0,
+        "shape_type": "geo_shape"
+      }
+    }
+  ]
+}
+POST /geo_shape/_doc/4?pipeline=polygonize_circles
+{
+   "name": "安全区",
+    "location": {
+        "type": "circle",
+        "coordinates": [30.0, 10.0],
+        "radius":"1m"
+    }
+}
+
+GET geo_shape/_doc/4
+
+
+#错误的 因为没有创建mapping 类型并不是几何图形
+POST /province/_doc/4
+{
+   "name": "河南省",
+    "location": {
+        "type": "circle",
+        "coordinates": [30.0, 10.0],
+        "radius":"1m"
+    }
+}
+
+GET test/_mapping
+
+
+
+
+#inline Shape Definition
+POST /geo_shape/_doc/1
+{
+    "name": "中国，香海",
+    "location": {
+        "type": "point",
+        "coordinates": [13.400544, 52.530286]
+    }
+}
+
+GET geo_shape/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "geo_shape": {
+            "location": {
+              "shape": {
+                "type": "envelope",
+                "coordinates": [
+                  [
+                    13,
+                    53
+                  ],
+                  [
+                    14,
+                    52
+                  ]
+                ]
+              },
+              "relation": "within"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+GET /geo_shape/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "geo_shape": {
+          "location": {
+            "indexed_shape": {
+              "index": "geo_shape",
+              "id": "4",
+              "path": "location"
+            },
+            "relation": "within"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+PUT geo_shape_test
+{
+    "mappings": {
+        "properties": {
+            "location": {
+                "type": "geo_shape"
+            }
+        }
+    }
+}
+
+#存矩形
+POST /geo_shape_test/_doc/A
+{
+  "location": {
+    "type": "envelope",
+    "coordinates": [[1,7],[6,1]]
+  }
+}
+POST /geo_shape_test/_doc/B
+{
+  "location": {
+    "type": "envelope",
+    "coordinates": [[4,8],[8,5]]
+  }
+}
+POST /geo_shape_test/_doc/C
+{
+  "location": {
+    "type": "envelope",
+    "coordinates": [[2,4],[4,2]]
+  }
+}
+
+#P1
+POST /geo_shape_test/_doc/P1
+{
+  "name":"P1",
+  "location":{
+    "type":"point",
+    "coordinates":[3, 3]
+  }
+}
+#P2
+POST /geo_shape_test/_doc/P2
+{
+  "name":"P2",
+  "location":{
+    "type":"point",
+    "coordinates":[5, 6]
+  }
+}
+#P3
+POST /geo_shape_test/_doc/P3
+{
+  "name":"P3",
+  "location":{
+    "type":"point",
+    "coordinates":[7, 7]
+  }
+}
+#P4
+POST /geo_shape_test/_doc/P4
+{
+  "name":"P4",
+  "location":{
+    "type":"point",
+    "coordinates":[3, 5]
+  }
+}
+#P5
+POST /geo_shape_test/_doc/P5
+{
+  "name":"P5",
+  "location":{
+    "type":"point",
+    "coordinates":[7, 3]
+  }
+}
+
+
+GET /geo_shape_test/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "geo_shape": {
+          "location": {
+            "indexed_shape": {
+              "index": "geo_shape_test",
+              "id": "A",
+              "path": "location"
+            },
+            "relation": "intersects"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,16 @@
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+node.name: node-4
+network.publish_host: 192.168.1.184
+path:
+  logs: /var/elasticsearch/logs
+  data: /var/elasticsearch/data
+bootstrap.memory_lock: false
+http.port: 9200
+transport.port: 9300
+discovery.seed_hosts: ["172.16.10.184:9300", "172.16.10.185:9300"]
+cluster.initial_master_nodes: ["node-4"]
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+node.master: true
+node.data: false

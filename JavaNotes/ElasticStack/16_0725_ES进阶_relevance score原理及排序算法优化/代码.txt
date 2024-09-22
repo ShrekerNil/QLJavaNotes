@@ -1,0 +1,525 @@
+DELETE product
+GET product/_mapping
+PUT product
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "ik_max_word"
+      },
+      "desc":{
+        "type": "text",
+        "analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+
+PUT product
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word"
+      },
+      "desc":{
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+
+PUT /product/_doc/1
+{
+  "name": "吃鸡手机，游戏神器，超级",
+  "desc": "基于TX深度定制，流畅游戏不发热，物理外挂，快充",
+  "price": 3999,
+  "createtime": "2020-05-20",
+  "collected_num": 99,
+  "tags": [
+    "性价比",
+    "发烧",
+    "不卡"
+  ]
+}
+
+PUT /product/_doc/2
+{
+  "name": "小米NFC手机",
+  "desc": "支持全功能NFC,专业吃鸡，快充",
+  "price": 4999,
+  "createtime": "2020-05-20",
+  "collected_num": 299,
+  "tags": [
+    "性价比",
+    "发烧",
+    "公交卡"
+  ]
+}
+
+PUT /product/_doc/3
+{
+  "name": "NFC手机，超级",
+  "desc": "手机中的轰炸机",
+  "price": 2999,
+  "createtime": "2020-05-20",
+  "collected_num": 1299,
+  "tags": [
+    "性价比",
+    "发烧",
+    "门禁卡"
+  ]
+}
+
+PUT /product/_doc/4
+{
+  "name": "小米耳机",
+  "desc": "耳机中的黄焖鸡",
+  "price": 999,
+  "createtime": "2020-05-20",
+  "collected_num": 9,
+  "tags": [
+    "低调",
+    "防水",
+    "音质好"
+  ]
+}
+
+PUT /product/_doc/5
+{
+  "name": "红米耳机",
+  "desc": "耳机中的肯德基",
+  "price": 399,
+  "createtime": "2020-05-20",
+  "collected_num": 0,
+  "tags": [
+    "牛逼",
+    "续航长",
+    "质量好"
+  ]
+}
+
+GET product/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"match": {"name": "吃鸡手机"}},
+        {"match": {"desc": "吃鸡手机"}}
+      ]
+    }
+  }
+}
+
+
+
+PUT /product2/_doc/1
+{
+    "name" : "xiaomi nfc shouji",
+    "desc" :  "zhichi quangongneng  nfc diaobaole",
+    "createtime":"2020-05-20"
+}
+PUT /product2/_doc/2
+{
+    "name" : "nfc shouji",
+    "desc" :  "xiaomi wei fasha ersheng",
+    "createtime":"2020-05-20"
+}
+GET product2/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"match": {"name": "xiaomi shouji"}},
+        {"match": {"desc": "xiaomi shouji"}}
+      ]
+    }
+  }
+}
+
+
+PUT /my_index/_doc/1
+{
+    "title": "Quick brown rabbits",
+    "body":  "Brown rabbits are commonly seen."
+}
+
+PUT /my_index/_doc/2
+{
+    "title": "Keeping pets healthy",
+    "body":  "My quick brown fox eats rabbits on a regular basis."
+}
+
+GET my_index/_search
+{
+    "query": {
+        "bool": {
+            "should": [
+                { "match": { "title": "Brown fox" }},
+                { "match": { "body":  "Brown fox" }}
+            ]
+        }
+    }
+}
+GET my_index/_mapping
+GET my_index/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                { "match": { "title": "Brown fox" }},
+                { "match": { "body":  "Brown fox" }}
+            ]
+        }
+    }
+}
+GET _analyze
+{
+  "analyzer": "ik_max_word",
+  "text": ["小米Phone，吃鸡手机，游戏神器"]
+}
+GET product/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                {"match": {"name": "吃鸡手机"}},
+                {"match": {"desc": "吃鸡手机"}}
+            ]
+        }
+    }
+}
+
+
+GET product/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"match": {"name": "吃鸡手机"}}
+      ]
+    }
+  }
+}
+
+GET _analyze
+{
+  "analyzer": "ik_max_word",
+  "text": ["超级快充"]
+}
+GET product/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"match": {"name": "超级快充"}},
+        {"match": {"desc": "超级快充"}}
+      ]
+    }
+  }
+}
+
+#tie_breaker 可以是 0 到 1 之间的浮点数，其中 0 代表使用 dis_max 最佳匹配语句的普通逻辑，1表示所有匹配语句同等重要。最佳的精确值需要根据数据与查询调试得出，但是合理值应该与零接近（处于 0.1 - 0.4 之间），这样就不会颠覆 dis_max 最佳匹配性质的根本。
+GET product/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                {"match": {"name": "超级快充"}},
+                {"match": {"desc": "超级快充"}}
+            ]
+        }
+    }
+}
+GET product/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                {"match": {"name": "超级快充"}},
+                {"match": {"desc": "超级快充"}}
+            ],
+            "tie_breaker": 0.7
+        }
+    }
+}
+#控制匹配精度 
+GET product/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "match": {
+            "name": {
+              "query": "吃鸡手机",
+              "minimum_should_match": "100%"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+GET product/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"match": {"name": "吃鸡"}},
+        {"match": {"name": "手机"}}
+      ],
+      "minimum_should_match": "50%"
+    }
+  }
+}
+GET product/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                {
+                  "match": {
+                    "name": {
+                      "query": "超级快充",
+                      "minimum_should_match": "50%",
+                      "boost": 2
+                    }
+                  }
+                },
+                {
+                  "match": {
+                    "desc":{
+                      "query": "超级快充",
+                      "minimum_should_match": "50%",
+                      "boost": 1
+                    }
+                  }
+                }
+            ],
+            "tie_breaker": 0.7
+        }
+    }
+}
+
+GET product/_search
+{
+    "query": {
+        "dis_max": {
+            "queries": [
+                {
+                  "match": {
+                    "name": {
+                      "query": "超级快充",
+                      "minimum_should_match": "50%",
+                      "boost": 2
+                    }
+                  }
+                },
+                {
+                  "match": {
+                    "desc":{
+                      "query": "超级快充",
+                      "minimum_should_match": "50%",
+                      "boost": 1
+                    }
+                  }
+                }
+            ],
+            "tie_breaker": 0.7
+        }
+    }
+}
+#best_fields和most_fields
+GET product/_search
+{
+  "query": {
+    "multi_match" : {
+      "query":      "超级快充",
+      "type":       "most_fields",
+      "fields":     [ "name", "desc" ],
+      "tie_breaker": 0.3
+    }
+  }
+}
+
+
+GET product/_search
+{
+  "query": {
+    "multi_match" : {
+      "query":      "吃鸡手机",
+      "type":       "most_fields",
+      "fields":     [ "name", "desc" ]
+    }
+  }
+}
+
+
+DELETE person
+PUT person
+{
+  "mappings": {
+    "properties": {
+      "last_name": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word"
+      },
+      "first_name":{
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+POST /person/_bulk
+{ "index": { "_id": "1"} }
+{ "name" : {"first_name" : "史密斯", "last_name" : "威廉姆斯"} }
+{ "index": { "_id": "2"} }	
+{ "name" : {"first_name" : "史蒂夫", "last_name" : "乔布斯"} }
+{ "index": { "_id": "3"} }
+{ "name" : { "first_name" : "彼得","last_name" : "史密斯"} }
+{ "index": { "_id": "4"} }
+{ "name" : { "first_name" : "阿诺德","last_name" : "施瓦辛格"} }
+{ "index": { "_id": "5"} }
+{ "name" : {"first_name" : "詹姆斯", "last_name" : "卡梅隆"} }
+{ "index": { "_id": "6"} }
+{ "name" : {"first_name" : "彼得", "last_name" : "詹姆斯"} }
+{ "index": { "_id": "7"} }
+{ "name" : {"first_name" : "彼得", "last_name" : "史密斯"} }
+{ "index": { "_id": "8"} }
+{ "name" : {"first_name" : "彼得", "last_name" : "史密斯"} }
+{ "index": { "_id": "9"} }
+{ "name" : {"first_name" : "彼得", "last_name" : "史密斯"} }
+{ "index": { "_id": "10"} }
+{ "name" : {"first_name" : "勒布朗", "last_name" : "史密斯"} }
+
+POST /teacher/_bulk
+{ "index": { "_id": "1"} }
+{ "name" : {"姓" : "吴", "名" : "磊"} }
+{ "index": { "_id": "2"} }	
+{ "name" : {"姓" : "连", "名" : "鹏鹏"} }
+{ "index": { "_id": "3"} }
+{ "name" : { "姓" : "张","名" : "明明"} }
+{ "index": { "_id": "4"} }
+{ "name" : { "姓" : "周","名" : "志志"} }
+{ "index": { "_id": "5"} }
+{ "name" : {"姓" : "吴", "名" : "亦凡"} }
+{ "index": { "_id": "6"} }
+{ "name" : {"姓" : "吴", "名" : "京"} }
+{ "index": { "_id": "7"} }
+{ "name" : {"姓" : "吴", "名" : "彦祖"} }
+{ "index": { "_id": "8"} }
+{ "name" : {"姓" : "帅", "名" : "吴"} }
+{ "index": { "_id": "9"} }
+{ "name" : {"姓" : "连", "名" : "磊"} }
+{ "index": { "_id": "10"} }
+{ "name" : {"姓" : "周", "名" : "磊"} }
+{ "index": { "_id": "11"} }
+{ "name" : {"姓" : "张", "名" : "磊"} }
+{ "index": { "_id": "12"} }
+{ "name" : {"姓" : "马", "名" : "磊"} }
+#{ "index": { "_id": "13"} }
+#{ "name" : {"姓" : "诸葛", "名" : "吴磊"} }
+
+
+
+
+#史密斯·琼斯
+#史蒂夫·乔布斯
+#威尔·史密斯
+#阿诺德·施瓦辛格
+#詹姆斯·卡梅隆
+#勒布朗·詹姆斯
+
+GET _analyze
+{
+  "analyzer": "ik_max_word",
+  "text": ["吴磊"]
+}
+GET person/_search
+GET person/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "彼得·史密斯",
+      "type": "most_fields",
+      "fields": [
+        "name.first_name",
+        "name.last_name"
+      ]
+    }
+  }
+}
+
+GET teacher/_search
+GET teacher/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "吴磊",
+      "type": "most_fields",
+      "fields": [
+        "name.姓",
+        "name.名"
+      ]
+    }
+  }
+}
+
+GET teacher/_search
+{
+  "query": {
+    "multi_match" : {
+      "query":      "吴磊",
+      "type":       "cross_fields",
+      "fields":     [ "name.姓", "name.名" ],
+      "operator":   "and"
+    }
+  }
+}
+
+GET product/_search
+
+GET product/_search
+{
+  "query": {
+    "function_score": {
+      "query": {
+        "match_all": {}
+      },
+      "field_value_factor": {
+        "field": "collected_num",
+        "modifier": "log1p",
+        "factor": 0.9
+      },
+      "boost_mode": "multiply",
+      "max_boost": 3,
+      "functions": [
+        {}
+      ]
+    }
+  }
+}
+GET product/_search
+{
+  "query": {
+    "function_score": {
+      "query": {
+        "match_all": {}
+      },
+      "script_score": {
+        "script": {
+          "source": "Math.log(1 + doc['price'].value)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,396 @@
+GET /_cat/aliases
+GET /_cat/fielddata
+GET /_cat/health
+GET /_cat/nodes
+GET /_cat/indices
+PUT /product_new/_alias/product_new_1 
+GET /_cat/aliases
+GET product/_mapping
+
+#创建索引
+PUT /product/_doc/1
+{
+"name":"张三"
+}
+
+
+#创建索引 with mapping
+PUT my_index1/_doc/1
+{
+  "name":"张三"
+}
+
+PUT my_index1
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword":{
+            "type":"keyword"
+          }
+        }
+      }
+    }
+  }
+}
+PUT my_index1/_doc/1
+{
+  "name":"张三"
+}
+DELETE my_index
+PUT my_index
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 6,
+      "number_of_replicas": 2
+    }
+  },
+  "mappings": {
+    "properties": {
+      "field1": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+GET /_cat/indices?v
+GET /_cat/shards?v
+
+
+
+
+
+##创建索引参数***************************
+#meta 参数
+PUT my_index3
+{
+  "mappings": {
+    "properties": {
+      "test": {
+        "type": "text",
+        "meta": {
+          "sdfasdfasdf": "ms"
+        }
+      }
+    }
+  }
+}
+GET my_index2
+
+
+#store
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "properties": {
+      "title": {
+        "store": true,
+        "type": "text"
+      },
+      "date": {
+        "store": true,
+        "type": "date"
+      },
+      "content": {
+        "type": "text"
+      },
+      "desc":{
+        "type":"text",
+        "index": false
+      }
+    }
+  }
+}
+
+PUT my_index/_doc/1
+{
+  "title": "Some short title",
+  "date": "2015-01-01",
+  "content": "A very long content field...",
+  "desc":"sss"
+}
+
+GET my_index/_search
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "desc": "sss"
+    }
+  }
+}
+GET my_index/_search
+{
+  "_source": ["title", "date"]
+}
+GET my_index/_search
+{
+  "_source": {
+    "includes": [
+      "title",
+      "date"
+    ],
+    "excludes": [
+      "content"
+    ]
+  }
+}
+
+GET my_index/_search
+{
+  "stored_fields": [
+    "title",
+    "date",
+    "content"
+  ]
+}
+
+
+
+
+PUT my_index2
+{
+  "mappings": {
+    "_source": {
+      "enabled": false
+    },
+    "properties": {
+      "title": {
+        "type": "text",
+        "store": true
+      },
+      "date": {
+        "type": "date",
+        "store": true
+      },
+      "content": {
+        "type": "text",
+        "store": false
+      }
+    }
+  }
+}
+PUT my_index2/_doc/1
+{
+  "title": "Some short title",
+  "date": "2015-01-01",
+  "content": "A very long content field..."
+}
+
+GET my_index2/_search
+{
+  "query": {
+    "match": {
+      "content": "content"
+    }
+  }
+}
+
+GET my_index2/_search
+{
+  "stored_fields": [
+    "title",
+    "date",
+    "content"
+  ]
+}
+
+
+GET my_index2/_search
+{
+  "stored_fields": [
+    "title",
+    "date",
+    "content"
+  ]
+}
+
+GET my_index/_search
+{
+  "stored_fields": [
+    "title",
+    "date",
+    "content"
+  ]
+}
+
+
+
+
+
+PUT /my_index3
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 3, 
+            "number_of_replicas" : 2 
+        }
+    }
+}
+
+#判断索引是否存在
+HEAD /my_index
+
+
+#删除索引：
+DELETE my_index
+
+
+#查询索引的设置信息
+GET my_index
+
+#打开/关闭索引
+POST my_index/_close
+GET my_index/_search
+PUT my_index/_doc/1
+{
+  "name":"ssss"
+}
+POST my_index/_open
+
+
+#压缩索引
+GET _cat/nodes
+#预先备份
+#删除副本
+#转移主分片
+#设置禁止写入
+PUT /my_index/_settings
+{
+  "settings": {
+    "index.number_of_replicas": 0,                                
+    "index.routing.allocation.require._name": "node-3", 
+    "index.blocks.write": true                                    
+  }
+}
+
+GET _cat/shards
+GET _cat/recovery?v
+
+
+POST /my_index/_shrink/my_target_index
+{
+  "settings": {
+    "index.number_of_replicas": 1,
+    "index.number_of_shards": 3, 
+    "index.codec": "best_compression" 
+  }
+}
+
+
+POST /my_target_index/_doc/1
+{
+  "sss":""
+}
+
+PUT my_target_index/_settings
+{
+  
+    "index.routing.allocation.require._name": null, 
+    "index.blocks.write": false 
+}
+
+
+#Rollover
+
+POST /my_index/_rollover/my-index-000001
+{
+  "conditions": {
+    "max_age":   "7d",
+    "max_docs":  2,
+    "max_size": "5gb"
+  }
+}
+
+
+PUT /logs-000001 
+{
+  "mappings": {
+    "properties": {
+      "test":{
+        "type": "text"
+      }
+    }
+  }, 
+  "aliases": {
+    "logs_write": {}
+  }
+}
+PUT /logs_write/_doc/1
+{
+  "test":"test"
+}
+PUT /logs_write/_doc/2
+{
+  "test":"test"
+}
+PUT /logs_write/_doc/3
+{
+  "test":"test"
+}
+PUT /logs_write/_doc/4
+{
+  "test":"test"
+}
+PUT /logs_write/_doc/5
+{
+  "test":"test"
+}
+PUT /logs_write/_doc/6
+{
+  "test":"test"
+}
+POST logs_write/_refresh
+GET logs_write/_search
+GET logs-000001/_mapping
+GET logs-000002/_mapping
+POST /logs_write/_rollover
+{
+  "conditions": {
+    "max_age":   "1d",
+    "max_docs":  2,
+    "max_size": "1gb"
+  },
+  "settings": {
+    "index.number_of_shards": 2
+  }
+}
+POST /logs_write/_rollover/my-index-666666
+{
+  "conditions": {
+    "max_age":   "1d",
+    "max_docs":  2,
+    "max_size": "1gb"
+  },
+  "settings": {
+    "index.number_of_shards": 2
+  }
+}
+
+PUT /%3Clogs-%7Bnow%2Fd%7D-1%3E 
+{
+  "aliases": {
+    "logs_write": {}
+  }
+}
+
+
+POST logs_write/_refresh
+
+# 等第二天再次执行0
+
+POST /logs_write/_rollover 
+{
+  "conditions": {
+    "max_docs":   "0"
+  }
+}
+
+
+
+GET logs-000002/_mapping

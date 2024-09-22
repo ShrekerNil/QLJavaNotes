@@ -1,0 +1,45 @@
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "keyword",
+          "char_filter": [
+            "my_char_filter"
+          ]
+        }
+      },
+      "char_filter": {
+        "my_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            "٠ => 0",
+            "١ => 1",
+            "٢ => 2",
+            "٣ => 3",
+            "٤ => 4",
+            "٥ => 5",
+            "٦ => 6",
+            "٧ => 7",
+            "٨ => 8",
+            "٩ => 9"
+          ]
+        }
+      }
+    }
+  }
+}
+
+
+POST /my_index/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "城管打电话喊商贩去摆摊" }
+{ "index": { "_id": "2"} }
+{ "text": "笑果文化回应商贩老农去摆摊" }
+{ "index": { "_id": "3"} }
+{ "text": "老农耗时17年种出椅子树" }
+{ "index": { "_id": "4"} }
+{ "text": "夫妻结婚30多年AA制,被城管抓" }
+{ "index": { "_id": "5"} }
+{ "text": "黑人见义勇为阻止抢劫反被铐住" }

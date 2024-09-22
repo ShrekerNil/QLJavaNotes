@@ -1,0 +1,310 @@
+
+#term suggest
+DELETE news
+PUT /news/
+{
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text"
+      }
+    }
+  }
+}
+POST _bulk
+{ "index" : { "_index" : "news","_id":1 } }
+{ "title": "baoqiang bought a new hat with the same color of this font, which is very beautiful baoqiangba baoqiangda baoqiangdada baoqian baoqia"}
+{ "index" : { "_index" : "news","_id":2 } }
+{ "title": "baoqiangge gave birth to two children, one is upstairs, one is downstairs baoqiangba baoqiangda baoqiangdada baoqian baoqia"}
+{ "index" : { "_index" : "news","_id":3} }
+{ "title": "baoqiangge 's money was rolled away baoqiangba baoqiangda baoqiangdada baoqian baoqia"}
+{ "index" : { "_index" : "news","_id":4} }
+{ "title": "baoqiangda baoqiangda baoqiangda baoqiangda baoqiangda baoqian baoqia"}
+
+GET news/_mapping
+
+POST _analyze
+{
+  "text": [
+    "BaoQiang bought a new hat with the same color of this font, which is very beautiful",
+    "BaoQiangGe gave birth to two children, one is upstairs, one is downstairs",
+    "BaoQiangGe 's money was rolled away"
+  ]
+}
+
+POST /news/_search
+POST /news/_search
+{ 
+  "suggest": {
+    "my-suggestion": {
+      "text": "baoqing baoqiang",
+      "term": {
+        "suggest_mode": "missing",
+        "field": "title"
+      }
+    }
+  }
+}
+
+GET /news/_search
+{ 
+  "suggest": {
+    "my-suggestion": {
+      "text": "baoqing baoqiang",
+      "term": {
+        "suggest_mode": "popular",
+        "field": "title",
+        "max_edits":1
+      }
+    }
+  }
+}
+
+GET /news/_search
+{ 
+  "suggest": {
+    "my-suggestion": {
+      "text": "baoqing baoqiang",
+      "term": {
+        "suggest_mode": "popular",
+        "field": "title",
+        "max_edits":2,
+        "max_term_freq":1
+      }
+    }
+  }
+}
+
+GET /news/_search
+{ 
+  "suggest": {
+    "my-suggestion": {
+      "text": "baoqing baoqiang",
+      "term": {
+        "suggest_mode": "always",
+        "field": "title",
+        "max_edits":2,
+        "max_term_freq":1
+      }
+    }
+  }
+}
+#always 和 popular区别
+DELETE news2
+POST _bulk
+{ "index" : { "_index" : "news2","_id":1 } }
+{ "title": "baoqiang3"}
+{ "index" : { "_index" : "news2","_id":2 } }
+{ "title": "baoqiang3 baoqiang2"}
+{ "index" : { "_index" : "news2","_id":3 } }
+{ "title": "baoqiang3 baoqiang2  baoqiang"}
+
+POST /news2/_search
+{ 
+  "suggest": {
+    "first-suggestion": {
+      "text": "baoqian baoqiang",
+      "term": {
+        "suggest_mode": "always",
+        "field": "title"
+      }
+    },
+    "second-suggestion": {
+      "text": "baoqian baoqiang",
+      "term": {
+        "suggest_mode": "popular",
+        "field": "title"
+      }
+    },
+    "third-suggestion": {
+      "text": "baoqian baoqiang",
+      "term": {
+        "suggest_mode": "missing",
+        "field": "title"
+      }
+    }
+  }
+}
+
+#phrase suggester
+DELETE news3
+POST _bulk
+{"index":{"_index":"news3","_id":1}}
+{"title":"baoqiang3","content":"baoqiang33"}
+{"index":{"_index":"news3","_id":2}}
+{"title":"baoqiang3 baoqiang2","content":"baoqiang33 baoqiang22"}
+{"index":{"_index":"news3","_id":3}}
+{"title":"baoqiang3 baoqiang2  baoqiang","content":"baoqiang33 baoqiang22 baoqiang11"}
+GET /news/_search
+GET /news/_search
+{
+  "suggest": {
+    "my-suggestion": {
+      "text": "baoqing baoqiang",
+      "phrase": {
+        "field": "title",
+        "size": 3,
+        "highlight": {
+          "pre_tag": "<h1>",
+          "post_tag": "</h1>"
+        },
+        "direct_generator": [
+          {
+            "suggest_mode": "always",
+            "field": "content"
+          },{
+            "suggest_mode": "popular",
+            "field": "content"
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#complate suggester
+PUT suggest_carinfo
+{
+  "mappings": {
+    "properties": {
+        "title": {
+          "type": "text",
+          "analyzer": "ik_max_word",
+          "fields": {
+            "suggest": {
+              "type": "completion",
+              "analyzer": "ik_max_word"
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "analyzer": "ik_max_word"
+        }
+      }
+  }
+}
+
+POST _bulk
+{"index":{"_index":"suggest_carinfo","_id":1}}
+{"title":"宝马X5 两万公里准新车","content":"这里是宝马X5图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":2}}
+{"title":"宝马5系","content":"这里是奥迪A6图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":3}}
+{"title":"宝马3系","content":"这里是奔驰图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":4}}
+{"title":"奥迪Q5 两万公里准新车","content":"这里是宝马X5图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":5}}
+{"title":"奥迪A6 无敌车况","content":"这里是奥迪A6图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":6}}
+{"title":"奥迪双钻","content":"这里是奔驰图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":7}}
+{"title":"奔驰AMG 两万公里准新车","content":"这里是宝马X5图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":8}}
+{"title":"奔驰大G 无敌车况","content":"这里是奥迪A6图文描述"}
+{"index":{"_index":"suggest_carinfo","_id":9}}
+{"title":"奔驰C260","content":"这里是奔驰图文描述"}
+
+
+GET suggest_carinfo/_search?pretty
+{
+    "suggest": {
+        "car_suggest" : {
+            "prefix" : "A6", 
+            "completion" : { 
+                "field" : "title.suggest" 
+            }
+        }
+    }
+}
+
+#1：内存代价太大，原话是：性能高是通过大量的内存换来的
+#2：只能前缀搜索,假如用户输入的不是前缀 召回率可能很低
+
+POST suggest_carinfo/_search
+{
+  "suggest": {
+    "car_suggest": {
+      "prefix": "宝马5系",
+      "completion": {
+        "field": "title.suggest",
+        "skip_duplicates":true,
+        "fuzzy": {
+          "fuzziness": 2
+        }
+      }
+    }
+  }
+}
+
+POST suggest_carinfo/_search
+{
+  "suggest": {
+    "car_suggest": {
+      "regex": "[\\s\\S]*",
+      "completion": {
+        "field": "title.suggest"
+      }
+    }
+  }
+}
+
+#geo_point
+PUT geo_point
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "location": {
+        "type": "geo_point"
+      }
+    }
+  }
+}
+
+
+PUT geo_point/_doc/1
+{
+  "name": "天安门",
+  "location": { 
+    "lat": 40.12,
+    "lon": -71.34
+  }
+}
+
+PUT geo_point/_doc/2
+{
+  "name": "前门",
+  "location": "25.23,50.54"
+}
+
+PUT geo_point/_doc/3
+{
+  "name": "后门",
+  "location": [30.16,60.54]
+}
+
+
+GET /geo_point/_search 
+{
+  "query": {
+    "geo_bounding_box": {
+      "location": {
+        "top_left": {
+          "lat": 50.73,
+          "lon": -74.1
+        },
+        "bottom_right": {
+          "lat": 30.01,
+          "lon": -61.12
+        }
+      }
+    }
+  }
+}
+
+
+

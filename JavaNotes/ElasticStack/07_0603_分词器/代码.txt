@@ -1,0 +1,340 @@
+#关于ES安装  跨域问题
+#关于版本问题 
+#关于性能慢的问题 慢查询
+#课件地址了更新 http://git.mashibing.com/bjmashibing/InternetArchitect/-/tree/master/22%20es
+
+
+#********************************************************************`
+
+#讲Mapping的时候讲过的语法  settings
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        }
+      },
+      "analyzer": {
+        "autocomplete": { 
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "autocomplete_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "text": {
+        "type": "text",
+        "analyzer": "autocomplete", 
+        "search_analyzer": "standard" 
+      }
+    }
+  }}
+
+
+
+#character filter
+#HTML Strip Character Filter
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "my_char_filter": {
+          "type": "html_strip",
+          "escaped_tags": ["a"]
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "keyword",
+          "char_filter": ["my_char_filter"]
+        }
+      }
+    }
+  }
+}
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "<p>I&apos;m so <a>happy</a>!</p>"
+}
+
+
+#Mapping Character Filter
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "keyword",
+          "char_filter": [
+            "my_char_filter"
+          ]
+        }
+      },
+      "char_filter": {
+        "my_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            "٠ => 0",
+            "١ => 1",
+            "٢ => 2",
+            "٣ => 3",
+            "٤ => 4",
+            "٥ => 5",
+            "٦ => 6",
+            "٧ => 7",
+            "٨ => 8",
+            "٩ => 9"
+          ]
+        }
+      }
+    }
+  }
+}
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "My license plate is ٢٥٠١٥"
+}
+
+
+#Pattern Replace Character Filter
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "standard",
+          "char_filter": ["my_char_filter"]
+        }
+      },
+      "char_filter": {
+        "my_char_filter": {
+          "type": "pattern_replace",
+          "pattern": "(\\d+)-(?=\\d)",
+          "replacement": "$1_"
+        }
+      }
+    }
+  }
+}
+POST my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "My credit card is 123-456-789"
+}
+
+
+
+#**************************************************************************
+#token filter：时态转换、大小写转换、同义词转换、语气词处理等
+#比如：has=>have  him=>he  apples=>apple  the/oh/a=>干掉
+#大小写 lowercase token filter
+GET _analyze
+{
+  "tokenizer" : "standard",
+  "filter" : ["lowercase"],
+  "text" : "THE Quick FoX JUMPs"
+}
+
+GET /_analyze
+{
+  "tokenizer": "standard",
+  "filter": [
+    {
+      "type": "condition",
+      "filter": [ "lowercase" ],
+      "script": {
+        "source": "token.getTerm().length() < 5"
+      }
+    }
+  ],
+  "text": "THE QUICK BROWN FOX"
+}
+ 
+#停用词 stopwords token filter
+PUT /my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer":{
+          "type":"standard",
+          "stopwords":"_english_"
+        }
+      }
+    }
+  }
+}
+GET my_index/_analyze
+{
+  "analyzer": "my_analyzer",
+  "text": "Teacher Ma is in the restroom"
+}
+
+#分词器  tokenizer  standard
+GET /my_index/_analyze
+{
+  "text": "江山如此多娇,小姐姐哪里可以撩",
+  "analyzer": "standard"
+}
+
+
+
+#自定义 analysis
+#设置type为custom告诉Elasticsearch我们正在定义一个定制分析器。将此与配置内置分析器的方式进行比较： type将设置为内置分析器的名称，如 standard或simple
+PUT /test_analysis
+{
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "test_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            "& => and",
+            "| => or"
+          ]
+        }
+      },
+      "filter": {
+        "test_stopwords": {
+          "type": "stop",
+          "stopwords": ["is","in","at","the","a","for"]
+        }
+      },
+      "tokenizer": {
+        "punctuation": { 
+          "type": "pattern",
+          "pattern": "[ .,!?]"
+        }
+      },
+      "analyzer": {
+        "my_analyzer": {
+          "type": "custom",
+          "char_filter": [
+            "html_strip",
+            "test_char_filter"
+          ],
+          "tokenizer": "standard",
+          "filter": ["lowercase","test_stopwords"]
+        }
+      }
+    }
+  }
+}
+
+GET /test_analysis/_analyze
+{
+  "text": "Teacher ma & zhang also thinks [mother's friends] is good | nice!!!",
+  "analyzer": "my_analyzer"
+}
+
+#创建mapping时候指定分词器
+PUT /test_analysis/_mapping/my_type
+{
+  "properties": {
+    "content": {
+      "type": "text",
+      "analyzer": "test_analysis"
+    }
+  }
+}
+
+#**************************************************************************
+#中文分词
+PUT my_index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "default": {
+          "type": "ik_max_word"
+        }
+      }
+    }
+  }
+}
+PUT /my_index
+{
+  "mappings": {
+      "properties": {
+        "text": {
+          "type": "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart"
+        }
+    }
+  }
+}
+POST /my_index/_bulk
+{ "index": { "_id": "1"} }
+{ "text": "城管打电话喊商贩去摆摊" }
+{ "index": { "_id": "2"} }
+{ "text": "笑果文化回应商贩老农去摆摊" }
+{ "index": { "_id": "3"} }
+{ "text": "老农耗时17年种出椅子树" }
+{ "index": { "_id": "4"} }
+{ "text": "夫妻结婚30多年AA制,被城管抓" }
+{ "index": { "_id": "5"} }
+{ "text": "黑人见义勇为阻止抢劫反被铐住" }
+
+GET /my_index/_analyze
+{
+  "text": "中华人民共和国国歌",
+  "analyzer": "ik_max_word"
+}
+GET /my_index/_analyze
+{
+  "text": "中华人民共和国国歌",
+  "analyzer": "ik_smart"
+}
+
+GET /my_index/_search 
+{
+  "query": {
+    "match": {
+      "text": "关关雎鸠"
+    }
+  }
+}
+
+GET /my_index/_analyze
+{
+  "text": "超级赛亚人",
+  "analyzer": "ik_max_word"
+}
+
+GET /my_index/_analyze
+{
+  "text": "碰瓷是一种敲诈, 应该被判刑",
+  "analyzer": "ik_max_word"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

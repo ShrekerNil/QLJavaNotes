@@ -1,0 +1,171 @@
+#疫情地图
+DELETE text_area
+PUT text_area
+{
+  "mappings": {
+    "properties": {
+      "date": {
+        "type": "date"
+      },
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "location": {
+        "type": "geo_shape"
+      },
+      "point": {
+            "type": "geo_point"
+          }
+    }
+  }
+}
+PUT text_area
+{
+    "mappings": {
+        "properties": {
+            "date": {
+              "type":"date"
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "location": {
+                "type": "geo_shape"
+            }
+        }
+    }
+}
+
+
+POST /text_area/_doc/1
+{
+  "name":"北京市",
+  "location": {
+    "type": "envelope",
+    "coordinates": [[2,4],[4,2]]
+  }
+}
+
+GET /text_area/_doc/1
+GET /text_area/_search
+{
+  
+  "size": 200
+}
+GET /text_area/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "geo_shape": {
+          "location": {
+            "indexed_shape": {
+              "index": "text_area",
+              "id": "22",
+              "path": "location"
+            },
+            "relation": "within"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+#现有确诊
+GET /text_area/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "status": 1
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "total_agg": {
+      "value_count": {
+        "field": "status"
+      }
+    }
+  },
+  "size": 0
+}
+
+#当日新增 
+GET /text_area/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "date": "2018-05-21"
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "total_agg": {
+      "value_count": {
+        "field": "status"
+      }
+    }
+  },
+  "size": 0
+}
+
+
+
+#搜索附近X公里
+GET /text_area/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "geo_distance": {
+            "distance": "10km",
+            "point": {
+              "lat": 39.6,
+              "lon": 116.5
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+#不同地区患者的数量
+
+GET text_area/_mapping
+
+PUT text_area/_mapping/
+{
+  "properties": {
+    "status": { 
+      "type":     "text",
+      "fielddata": true
+    }
+  }
+}
