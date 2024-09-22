@@ -28,14 +28,14 @@ function judgement() {
     cmd=$1
     result_code=$2
     output=$3
-    
+
     # if [[ $result_code -ne 0 ]]; then
     #   echo_info Result Code: $2
     # fi
     if [[ ${#output} -gt 0 ]]; then
         echo_info "${output}"
     fi
-    
+
     # if [[ $result_code -eq 0 ]]; then
     #   new_line
     #   echo_sucess "Command Of \"$cmd\" Executed Successfully."
@@ -117,7 +117,7 @@ if [[ $result =~ "Changes not staged for commit" || $result =~ "Untracked files:
     echo_info "Add ... for ${cur_dir}"
     result=`git add ./`
     judgement "git add ./" $? "$result"
-    
+
     print_start_line
     echo_info "Commiting ... for ${cur_dir}"
     result=`git commit -m "-- Auto Save Files --"`
@@ -129,18 +129,33 @@ else
 fi
 
 print_start_line
-echo_info "Pulling ... for ${cur_dir}"
-result=`git pull`
+echo_info "Pulling ${cur_dir} from Gitee ..."
+result=`git pull gitee main`
 judgement "git pull" $? "$result"
 
+# Push to github main
 if [[ $need_push -eq 1 ]]; then
     print_start_line
-    echo_info "Pushing Local Changes to Remote for ${cur_dir}"
-    result=`git push`
+    echo_info "Pushing Local Changes to Github Remote: ${cur_dir}"
+    result=`git push -f github main`
     judgement "git push" $? "$result"
 else
     echo_info "Nothing to push, Skipping ..."
 fi
 
-# new_line
-# read -p "PRESSING ENTER TO EXIT ... "
+# Push to gitee master
+if [[ $need_push -eq 1 ]]; then
+    print_start_line
+    echo_info "Pushing Local Changes to Gitee Remote: ${cur_dir}"
+    result=`git push -f gitee main`
+    judgement "git push" $? "$result"
+else
+    echo_info "Nothing to push, Skipping ..."
+fi
+
+
+# pause when scripts without param
+if [[ -z $1 ]]; then
+    new_line
+    read -p "PRESSING ENTER TO EXIT ... "
+fi
