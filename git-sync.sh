@@ -137,7 +137,7 @@ judgement "git pull" $? "$result"
 if [[ $need_push -eq 1 ]]; then
     print_start_line
     echo_info "Pushing Local Changes to Github Remote: ${cur_dir}"
-    result=`git push -f github main`
+    result=`git push -f github master`
     judgement "git push" $? "$result"
 else
     echo_info "Nothing to push, Skipping ..."
@@ -152,7 +152,6 @@ if [[ $need_push -eq 1 ]]; then
 else
     echo_info "Nothing to push, Skipping ..."
 fi
-
 
 # pause when scripts without param
 if [[ -z $1 ]]; then
