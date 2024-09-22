@@ -1,0 +1,78 @@
+### Project File ###
+*.class
+**/target
+**/webapp/userfiles
+**/WEB-INF/classes
+**/logs/log*.log
+
+### Package File ###
+*.war
+*.ear
+#*.jar
+
+### Maven File ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Gradle File ###
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+gradle-app.setting
+.gradletasknamecache
+
+### Eclipse File ###
+.settings/
+.project
+.classpath
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+*.ipr
+*.iml
+*.iws
+*.iml
+*.ipr
+*.iws
+*.iml
+*.ipr
+/out/
+.idea
+
+### VS Code ###
+.vscode/
+
+### NetBeans ###
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### Temp File ###
+*.log
+*.cache
+*.diff
+*.patch
+*.tmp
+
+### System File ###
+.DS_Store
+Thumbs.db
+
+### Other ###
+.svn
+.metadata
+.recommenders
+RemoteSystemsTempFiles
+Servers
+~*
