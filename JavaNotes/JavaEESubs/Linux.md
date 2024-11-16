@@ -1478,6 +1478,12 @@ cat追加文本有两种形式：
 
 ## Shell中的数组和字典
 
+> ```
+> ${!SCRIPT_SOURCE[@]}
+> ```
+>
+> 
+
 ### 数组
 
 ```sh
@@ -2901,6 +2907,226 @@ echo "Exiting the script."
 
 - `${array[@]}`：这是获取数组 `array` 所有元素的标准方式。
 - `${!array[@]}`：通过在变量名前加 `!`，我们使用间接引用。这意味着不是获取数组元素的值，而是获取数组元素的键（索引）。
+
+## Linux环境待测试
+
+### Git环境的全局变量
+
+> 待验证
+
+```sh
+################################################### super.sh
+#!/bin/bash
+
+echo ---------------------super-------------------
+
+if [[ -z "${SCRIPT_SOURCE}" ]]; then
+    echo "${BASH_SOURCE[0]}中定义SCRIPT_SOURCE"
+    declare -a SCRIPT_SOURCE
+    export SCRIPT_SOURCE
+fi
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "========== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+
+# 2. 调用其他脚本
+bash ./sub_shell_1.sh
+bash ./sub_shell_2.sh
+
+# 3. 打印 SCRIPT_SOURCE 数组内容
+echo "脚本调用顺序："
+for script in "${SCRIPT_SOURCE[@]}"; do
+    echo "$script"
+done
+
+echo =====================111===================
+
+################################################### sub_shell_1.sh
+#!/bin/bash
+
+echo ---------------------sub_shell_1-------------------
+
+if [[ -z "${SCRIPT_SOURCE}" ]]; then
+    echo "${BASH_SOURCE[0]}中定义SCRIPT_SOURCE"
+    declare -a SCRIPT_SOURCE
+    export SCRIPT_SOURCE
+fi
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "========== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+
+# 示例操作
+echo "执行 script1.sh"
+
+echo =====================sub_shell_1===================
+
+################################################### sub_shell_2.sh
+
+#!/bin/bash
+
+echo ---------------------sub_shell_2-------------------
+
+if [[ -z "${SCRIPT_SOURCE}" ]]; then
+    echo "${BASH_SOURCE[0]}中定义SCRIPT_SOURCE"
+    export SCRIPT_SOURCE=()
+fi
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "========== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+# 示例操作
+echo "执行 script2.sh"
+
+echo =====================sub_shell_2===================
+
+```
+
+### Git环境的函数变量传递
+
+> 已验证
+
+```sh
+#!/bin/bash
+
+echo ---------------------super-------------------
+
+# 示例操作
+echo "执行 super.sh"
+
+declare -a SCRIPT_SOURCE
+
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+echo "(((((((((((((((((((((((((((((((((((((("
+echo "SCRIPT_SOURCE in child:"
+for element in "${SCRIPT_SOURCE[@]}"; do
+  echo "$element"
+done
+echo "))))))))))))))))))))))))))))))))))))))"
+
+# 使用 printf 传递数组元素
+printf -v array_str "%s " "${SCRIPT_SOURCE[@]}"
+bash sub_shell_1.sh "$array_str"
+
+echo =====================111===================
+
+=============================================================
+#!/bin/bash
+
+echo ---------------------sub_shell_1-------------------
+
+# 示例操作
+echo "执行 sub_shell_1.sh"
+
+# 使用 eval 接收数组
+# eval "SCRIPT_SOURCE=($1)"
+# 或者
+SCRIPT_SOURCE="$1"
+IFS=' ' read -r -a SCRIPT_SOURCE <<< "$SCRIPT_SOURCE"
+
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+echo "(((((((((((((((((((((((((((((((((((((("
+echo "SCRIPT_SOURCE in child:"
+for element in "${SCRIPT_SOURCE[@]}"; do
+  echo "$element"
+done
+echo "))))))))))))))))))))))))))))))))))))))"
+
+# 传递数组到 sub_shell_2.sh
+printf -v array_str "%s " "${SCRIPT_SOURCE[@]}"
+bash sub_shell_2.sh "$array_str"
+
+echo =====================sub_shell_1===================
+
+=============================================================
+#!/bin/bash
+
+echo ---------------------sub_shell_2-------------------
+
+# 示例操作
+echo "执行 script2.sh"
+
+# 使用 eval 接收数组
+# eval "SCRIPT_SOURCE=($1)"
+# 或者
+SCRIPT_SOURCE="$1"
+IFS=' ' read -r -a SCRIPT_SOURCE <<< "$SCRIPT_SOURCE"
+
+echo "(((((((((((((((((((((((((((((((((((((("
+echo "SCRIPT_SOURCE in child:"
+for element in "${SCRIPT_SOURCE[@]}"; do
+  echo "$element"
+done
+echo "))))))))))))))))))))))))))))))))))))))"
+
+echo 数量a：${#SCRIPT_SOURCE[@]}
+echo "== ${BASH_SOURCE[0]}"
+SCRIPT_SOURCE+=("${BASH_SOURCE[0]}")
+echo 数量b：${#SCRIPT_SOURCE[@]}
+
+echo "(((((((((((((((((((((((((((((((((((((("
+echo "SCRIPT_SOURCE in child:"
+for element in "${SCRIPT_SOURCE[@]}"; do
+  echo "$element"
+done
+echo "))))))))))))))))))))))))))))))))))))))"
+
+echo =====================sub_shell_2===================
+打印：
+$ ./super.sh
+---------------------111-------------------
+执行 super.sh
+数量a：0
+== ./super.sh
+数量b：1
+((((((((((((((((((((((((((((((((((((((
+SCRIPT_SOURCE in child:
+./super.sh
+))))))))))))))))))))))))))))))))))))))
+---------------------222-------------------
+执行 sub_shell_1.sh
+数量a：1
+== sub_shell_1.sh
+数量b：2
+((((((((((((((((((((((((((((((((((((((
+SCRIPT_SOURCE in child:
+./super.sh
+sub_shell_1.sh
+))))))))))))))))))))))))))))))))))))))
+---------------------333-------------------
+执行 script2.sh
+((((((((((((((((((((((((((((((((((((((
+SCRIPT_SOURCE in child:
+./super.sh
+sub_shell_1.sh
+))))))))))))))))))))))))))))))))))))))
+数量a：2
+== sub_shell_2.sh
+数量b：3
+((((((((((((((((((((((((((((((((((((((
+SCRIPT_SOURCE in child:
+./super.sh
+sub_shell_1.sh
+sub_shell_2.sh
+))))))))))))))))))))))))))))))))))))))
+=====================333===================
+=====================222===================
+=====================111===================
+```
+
+
 
 # 部署问题总结
 
