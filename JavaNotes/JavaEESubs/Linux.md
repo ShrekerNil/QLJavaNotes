@@ -1026,6 +1026,9 @@ $ ip netns exec ns-test2 ping 192.168.1.1
 
 2. 不输出换行符，请使用：`echo -n "<content>"`
 
+   - 默认的情况下，echo在输出完成后会添加换行符，即在下方添加一个空行
+
+
 ## 变量
 
 [linux中()、\[\]、{}、(())、\[\[\\]\]等各种括号的使用](https://www.cnblogs.com/my-first-blog-lgz/p/13390430.html)
@@ -2652,6 +2655,8 @@ fi
 
 ## Shell颜色控制
 
+### 编码控制
+
 ```sh
 # col.sh
 # 颜色代码标识 \003 可以替换为 \E
@@ -2696,6 +2701,26 @@ echo -e "\033[34m_蓝色字 \033[0m"
 echo -e "\033[35m_紫色字 \033[0m" 
 echo -e "\033[36m_天蓝字 \033[0m" 
 echo -e "\033[37m_白色字 \033[0m"
+```
+
+### 代码控制
+
+```sh
+#!/bin/bash
+
+# 判断是否支持颜色
+if tput setaf 1 &> /dev/null; then
+  RED=$(tput setaf 1)
+  RESET=$(tput sgr0)
+else
+  RED=""
+  RESET=""
+fi
+
+# 输出彩色文本
+echo -n "${RED}这是一个红色的消息${RESET}"
+echo
+
 ```
 
 ## Shell脚本调试
