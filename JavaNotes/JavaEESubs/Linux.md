@@ -528,6 +528,40 @@ EOF
 - set shiftwidth=4　　//自动缩进4格
 - set ignorecase　　//忽略大小写
 
+## 环境变量
+
+### 管理环境变量的文件
+
+1. 全局配置文件
+   - **/etc/profile**
+   - /etc/profile.d/*.sh
+   - /etc/bashrc
+2. 个人配置文件
+   - ~/.bash_profile
+   - ~/.bashrc
+
+### 常见的系统环境变量
+
+| 环境变量 | 解释                                                         |
+| -------- | ------------------------------------------------------------ |
+| PATH     | 命令搜索路径                                                 |
+| HOME     | 当前用户主目录，root用户特殊，是`/root`，其他比较特殊，在`/home/<username>` |
+| SHELL    | 当前使用的Shell解释器                                        |
+| HISTFILE | 显示当前用户命令使用记录文件：`.bash_history`                |
+| PWD      | 显示当前工作目录                                             |
+| OLDPWD   | 显示之前工作目录                                             |
+| HOSTNAME | 当前主机名                                                   |
+| HOSTTYPE | 主机架构，是i386、i686、还是x86、x64等                       |
+| LANG     | 当前系统的语言环境：zh_CN.UTF-8                              |
+
+
+
+### 查看变量
+
+`set`
+
+
+
 ## 软链接和硬链接
 
 软链接和硬链接都是链接，都可以通过链接访问到文件
