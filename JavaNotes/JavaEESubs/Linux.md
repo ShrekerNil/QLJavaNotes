@@ -92,8 +92,9 @@ VSCode的变量命名规则及举例说明
 - chmod
 
 - grep
+  - **G**lobal **R**egular **E**xpression **P**rint
   - 从文件中查找关键词所在行并打印列表：`grep <keyword>: <file>`
-
+  
 - head
 - tail
 - wc
