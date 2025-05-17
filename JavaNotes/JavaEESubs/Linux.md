@@ -347,6 +347,127 @@ crontab -e
 * */1 * * 5 <command | script>
 ```
 
+### 等待用户输入
+
+在 Windows 10 的 Git Bash 中暂停脚本执行，可以通过以下方案实现：
+
+#### 等待用户按下 **回车键**
+```bash
+read -p "Press [Enter] to continue ..."
+```
+- **作用**：暂停脚本直到用户按下回车键。
+- **注意**：`-p` 用于显示提示信息。
+
+#### 等待用户按下 **任意键**
+```bash
+read -rsn1 -p "Press [Any Key] to continue ..."
+```
+- **参数说明**：
+  - `-r`: 禁止反斜杠转义。
+  - `-s`: 隐藏用户输入内容。
+  - `-n1`: 只需 1 个字符输入即可继续。
+- **用途**：无需回车，按任意键立即继续。
+
+#### 固定时间暂停(无需交互)
+```bash
+sleep 5  # 暂停 5 秒
+```
+- **用途**：非阻塞暂停，适合定时等待场景(如下载重试)。
+
+#### 兼容性更强的输入处理
+```bash
+read -rsn1 -p "Press [Any Key] to continue ..." < /dev/tty
+```
+- **用途**：强制从终端直接读取输入，避免因脚本输入流重定向导致的失效。
+
+#### 模拟Windows的`pause`命令
+```bash
+function pause() {
+  read -s -n 1 -p "Press [Any Key] to continue ..."
+  echo
+}
+pause  # 调用函数
+```
+- **效果**：行为类似 Windows CMD 的 `pause`，按任意键继续。
+
+#### 常见问题
+1. 为何 `read` 命令不等待输入？
+   可能因输入流被其他进程占用，使用 `< /dev/tty` 强制从终端读取。
+
+2. 需要跨平台兼容？
+   可结合条件判断选择暂停方式，例如：
+   
+   ```bash
+   if [[ "$OSTYPE" == "msys" ]]; then
+     read -rsn1 -p "Windows 环境下暂停..."
+   else
+     # 其他系统的逻辑
+   fi
+   ```
+
+3. Git Bash 双击运行带有read命令的Shell脚本时，read不起作用，不等待用户输入
+
+   > Win10的Git Bash环境中，直接双击Shell文件运行含有`read -p "Press [Enter] to continue ..."`的Shell脚本，命令行窗口一闪而过，但是通过已经打开的窗口运行`./syncing.sh`就会等待用户输入，这是为什么，怎么解决
+   >
+   > 这个问题暂时没有找到解决方案，做如下总结：
+   >
+   > 1. 当脚本被调用执行的时候，其实没有必要等待
+   > 2. 如果需要等待
+
+   在 Git Bash 中，当你双击运行一个包含 `read` 命令的脚本时，`read` 命令可能不会像预期的那样等待用户输入。这通常是由于以下几个原因导致的：
+
+   1. **脚本的执行方式**：
+      
+      - **双击运行**：当你双击运行一个脚本时，Git Bash 会以非交互模式启动，并在一个新的窗口中执行脚本。脚本执行完毕后，窗口会立即关闭，因此你无法看到 `read` 命令的提示或输入。
+      - **命令行运行**：如果你在已经打开的 Git Bash 窗口中运行脚本，`read` 命令会正常工作，因为它是在一个交互式会话中执行的。
+      
+   2. **脚本的执行方式**：
+      - **批处理文件（.bat 或 .cmd）**：如果你通过批处理文件来运行 Git Bash 脚本，可能会导致 `read` 命令无法正常工作。批处理文件通常不会处理交互式输入。
+      - **Shell 脚本（.sh）**：如果你直接运行一个 Shell 脚本，确保脚本具有可执行权限，并且使用了正确的 shebang（例如 `#!/bin/bash`）。
+
+   3. **解决方法**：
+      
+      - **使用命令行运行脚本**：打开 Git Bash 窗口，导航到脚本所在的目录，然后运行脚本。例如：
+        ```bash
+        bash your_script.sh
+        ```
+        这样，`read` 命令会正常工作，等待用户输入。
+      
+      - **在脚本末尾添加 `pause`**：如果你希望通过双击运行脚本并保持窗口打开，可以在脚本末尾添加 `pause` 命令。这将使窗口在脚本执行完毕后等待用户按任意键。例如：
+        ```bash
+        #!/bin/bash
+        echo "请输入一些内容:"
+        read input
+        echo "你输入了: $input"
+        pause
+        ```
+        注意：`pause` 是 Windows 命令，如果你使用的是 Git Bash 的 Shell 脚本，可能需要使用其他方法，例如：
+        ```bash
+        read -p "按任意键继续..."
+        ```
+      
+      - **使用快捷方式设置**：你可以通过创建一个快捷方式并设置其属性来运行 Git Bash 并执行脚本，同时保持窗口打开。例如：
+        1. 右键点击桌面，选择“新建” -> “快捷方式”。
+        2. 在“请输入对象的位置”字段中，输入：
+           ```
+           "C:\Program Files\Git\bin\bash.exe" -c "path\to\your_script.sh; exec bash"
+           ```
+           替换 `path\to\your_script.sh` 为你的脚本的实际路径。
+        3. 点击“下一步”，完成快捷方式的创建。
+        4. 右键点击快捷方式，选择“属性”，在“运行”选项中选择“正常窗口”。
+        5. 点击“确定”保存设置。
+      
+      - **使用 `exec bash`**：在脚本末尾添加 `exec bash`，这将启动一个新的交互式 Bash 会话，保持窗口打开。例如：
+        ```bash
+        #!/bin/bash
+        echo "请输入一些内容:"
+        read input
+        echo "你输入了: $input"
+        exec bash
+        ```
+
+   通过以上方法，你可以确保 `read` 命令在 Git Bash 中正常工作，等待用户输入。
+
 ## 实践案例
 
 ### AccessLog中找出访问量最高的IP
@@ -1959,6 +2080,128 @@ ls /path/to/nonexistent_directory  # 这行命令会出错
 # 其他命令
 echo "子脚本的其他命令执行成功。"
 ```
+
+### 判断脚本直接运行还是被调用
+
+在 Git Bash 中判断脚本是直接运行还是被其他脚本调用，可以通过以下方案实现：
+
+#### 核心思路
+通过检查 **调用来源** 或 **进程树** 判断脚本的执行方式：
+- 若脚本被直接运行，其父进程通常是终端（如 `mintty`、`bash` 或 `cmd.exe`）。
+- 若脚本被其他脚本调用，父进程可能是另一个脚本的进程。
+
+#### 通过 `BASH_SOURCE` 判断调用层级
+```bash
+if [[ "${#BASH_SOURCE[@]}" -eq 1 ]]; then
+  echo "脚本被直接执行"
+else
+  echo "脚本被其他脚本或 source 调用"
+fi
+```
+- **原理**：  
+  `BASH_SOURCE` 数组记录调用栈中的脚本路径。若数组长度为 1，说明当前脚本是顶层执行环境。
+
+#### 通过父进程信息判断
+```bash
+parent_comm=$(ps -p $PPID -o comm=)
+case "$parent_comm" in
+  mintty*|bash|sh|cmd.exe|conhost.exe)
+    echo "用户直接运行（父进程是终端或Shell）"
+    ;;
+  *)
+    echo "可能被其他脚本调用（父进程是 $parent_comm）"
+    ;;
+esac
+```
+- **原理**：  
+  使用 `ps -p $PPID` 获取父进程名称。若父进程是终端（如 `mintty`）或交互式 Shell（如 `bash`），则可能是用户直接运行。
+
+#### 结合 `$0` 和 `$$` 检测独立进程
+```bash
+if [[ "$(basename "$0")" != "bash" && "$0" != "-bash" ]]; then
+  echo "脚本作为独立进程运行（直接执行或被其他脚本启动）"
+else
+  echo "脚本被 source 或在交互式 Shell 中执行"
+fi
+```
+- **原理**：  
+  直接执行的脚本 `$0` 为脚本路径；被 `source` 或交互式 Shell 中运行时，`$0` 为 `bash`。
+
+#### 检查进程调用链（推荐）
+```bash
+# 获取父进程的命令行参数
+parent_cmd=$(ps -p $PPID -o args=)
+current_script=$(basename "$0")
+
+# 判断父进程是否包含其他脚本
+if [[ "$parent_cmd" == *"$current_script"* ]]; then
+  echo "递归调用（自身被自己调用）"
+elif [[ "$parent_cmd" == *"bash"* && "$parent_cmd" != *"$current_script"* ]]; then
+  echo "可能被其他脚本调用"
+else
+  echo "用户直接运行"
+fi
+```
+- **原理**：  
+  若父进程的命令行参数包含其他脚本名，说明当前脚本被调用。
+
+#### 验证示例
+保存为 `test.sh` 并测试不同场景：
+```bash
+#!/bin/bash
+
+echo "=== 执行方式检测 ==="
+
+# 方法 1：BASH_SOURCE 层级
+if [[ "${#BASH_SOURCE[@]}" -eq 1 ]]; then
+  echo "[方法1] 直接执行或通过子进程调用"
+else
+  echo "[方法1] 被 source 或嵌套调用"
+fi
+
+# 方法 2：父进程名称
+parent_comm=$(ps -p $PPID -o comm= 2>/dev/null)
+echo "[方法2] 父进程名称: $parent_comm"
+
+# 方法 4：进程调用链
+parent_cmd=$(ps -p $PPID -o args= 2>/dev/null)
+current_script=$(basename "$0")
+if [[ "$parent_cmd" == *"$current_script"* ]]; then
+  echo "[方法4] 递归调用"
+elif [[ "$parent_cmd" == *"bash"* && "$parent_cmd" != *"$current_script"* ]]; then
+  echo "[方法4] 可能被其他脚本调用"
+else
+  echo "[方法4] 用户直接运行"
+fi
+```
+
+#### 测试场景
+1. **直接运行**：  
+   ```bash
+   ./test.sh
+   ```
+   - 输出应提示“直接运行”。
+
+2. **被其他脚本调用**：  
+   创建 `caller.sh`：
+   ```bash
+   #!/bin/bash
+   ./test.sh
+   ```
+   运行：
+   ```bash
+   ./caller.sh
+   ```
+   - 输出应提示“被其他脚本调用”。
+
+3. **递归调用**：  
+   在 `test.sh` 末尾添加 `./test.sh` 并运行，观察递归检测。
+
+#### 注意事项
+- **Git Bash 环境差异**：  
+  `ps` 命令参数可能与 Linux 不同，建议先测试命令输出。
+- **source 调用**：  
+  使用 `source test.sh` 或 `. test.sh` 时，脚本会在当前 Shell 中执行，`BASH_SOURCE` 层级会增加。
 
 ## 父子脚本传递数据
 
