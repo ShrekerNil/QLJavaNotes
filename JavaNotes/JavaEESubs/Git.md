@@ -374,6 +374,7 @@ git rm --f "文件路径
 
 ```sh
 ssh-keygen -t rsa -C 'SSH.S-COMMON'
+ssh-keygen -t rsa -b 4096 -C "SSH-COMMON"
 ```
 
 ## safe.directory
