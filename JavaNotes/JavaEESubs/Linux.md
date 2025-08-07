@@ -242,10 +242,64 @@ lsof -op <pid>
 
 ### 开关机命令
 
-- shutdown
-- halt
-- poweroff
-- reboot
+以下是 Linux 系统关机命令的完整整理表格，包含命令、说明、注意事项和适用场景：
+
+#### Linux 关机命令参考表
+
+| **命令**                       | **说明**             | **注意事项**                                                 | **适用场景**         |
+| ------------------------------ | -------------------- | ------------------------------------------------------------ | -------------------- |
+| `sudo shutdown -h now`         | 安全关机（立即执行） | 1. 会通知所有登录用户<br>2. 阻止新用户登录<br>3. 默认延迟 1 分钟 | 日常安全关机（推荐） |
+| `sudo shutdown -h +5`          | 延迟关机（5 分钟后） | 1. 可自定义延迟时间<br>2. 可添加警告信息<br>3. 支持取消：`sudo shutdown -c` | 计划关机（如更新后） |
+| `sudo shutdown -h 20:00`       | 定时关机（指定时间） | 使用 24 小时制时间格式                                       | 定时自动关机         |
+| `sudo poweroff`                | 立即关闭系统         | 1. 直接切断电源<br>2. 无用户通知<br>3. 相当于 `shutdown -h now` | 快速关机             |
+| `sudo poweroff -f`             | 强制关机             | **危险**：可能丢失未保存数据                                 | 系统完全无响应时     |
+| `sudo halt`                    | 停止系统运行         | 1. 不一定切断电源<br>2. 系统保持在停止状态                   | 系统维护/调试        |
+| `sudo halt -p`                 | 停止并切断电源       | 相当于 `poweroff`                                            | 需要完全关机         |
+| `sudo init 0`                  | 切换到运行级别 0     | 传统 SysVinit 命令                                           | 兼容旧系统           |
+| `sudo systemctl poweroff`      | Systemd 关机命令     | systemd 系统专用                                             | 现代 Linux 发行版    |
+| `sudo loginctl poweroff`       | 通过登录管理器关机   | 会终止所有用户会话                                           | 多用户系统           |
+| `echo o > /proc/sysrq-trigger` | SysRq 安全关机       | 1. 需启用 SysRq<br>2. 序列：`REISUO`                         | 内核级安全关机       |
+| `echo b > /proc/sysrq-trigger` | SysRq 强制重启       | **危险**：直接重启不保存数据                                 | 系统完全死机时       |
+
+#### 附加命令和技巧
+
+| **命令/操作**         | **说明**           | **注意事项**                                        |
+| --------------------- | ------------------ | --------------------------------------------------- |
+| `sync`                | 同步磁盘数据       | 关机前手动执行确保数据安全                          |
+| `shutdown -c`         | 取消计划关机       | 仅对延迟关机有效                                    |
+| `wall "系统即将关机"` | 向所有用户广播消息 | 配合延迟关机使用                                    |
+| `sudo visudo`         | 配置免密关机       | 添加：`username ALL=(ALL) NOPASSWD: /sbin/shutdown` |
+| `journalctl -b -1`    | 查看上次关机日志   | 排查关机问题                                        |
+
+#### 最佳实践建议
+
+1. **日常使用**：首选 `sudo shutdown -h now`
+2. **计划关机**：`sudo shutdown -h +10 "系统将在10分钟后关机"`
+3. **无响应系统**：
+   - 先尝试 SysRq 安全序列：`Alt+SysRq+REISUO`
+   - 最后手段：物理电源键（长按 5 秒）
+4. **远程服务器**：
+   ```bash
+   sync  # 先同步数据
+   nohup sudo shutdown -h now &  # 后台执行
+   exit  # 安全退出SSH
+   ```
+
+#### 关机流程说明
+```mermaid
+graph LR
+A[用户发起关机] --> B{是否延迟?}
+B -->|是| C[通知所有用户]
+B -->|否| D[立即开始流程]
+C --> D
+D --> E[终止进程]
+E --> F[卸载文件系统]
+F --> G[同步磁盘数据]
+G --> H[发送ACPI信号]
+H --> I[切断电源]
+```
+
+> **重要提示**：除非系统完全无响应，否则避免使用强制关机命令（`-f` 参数或 SysRq `b`），这可能导致文件系统损坏和数据丢失。对于重要服务器，建议关机前手动执行 `sync` 命令确保数据安全。
 
 ### 系统命令
 
@@ -447,8 +501,8 @@ pause  # 调用函数
       - **命令行运行**：如果你在已经打开的 Git Bash 窗口中运行脚本，`read` 命令会正常工作，因为它是在一个交互式会话中执行的。
       
    2. **脚本的执行方式**：
-      - **批处理文件（.bat 或 .cmd）**：如果你通过批处理文件来运行 Git Bash 脚本，可能会导致 `read` 命令无法正常工作。批处理文件通常不会处理交互式输入。
-      - **Shell 脚本（.sh）**：如果你直接运行一个 Shell 脚本，确保脚本具有可执行权限，并且使用了正确的 shebang（例如 `#!/bin/bash`）。
+      - **批处理文件(.bat 或 .cmd)**：如果你通过批处理文件来运行 Git Bash 脚本，可能会导致 `read` 命令无法正常工作。批处理文件通常不会处理交互式输入。
+      - **Shell 脚本(.sh)**：如果你直接运行一个 Shell 脚本，确保脚本具有可执行权限，并且使用了正确的 shebang(例如 `#!/bin/bash`)。
 
    3. **解决方法**：
       
@@ -545,6 +599,49 @@ TAB替换为空格
 :set noexpandtab
 :%retab!
 ```
+
+## 命令行控制
+
+### 命令行颜色总结
+
+> 表格形式; `\E` 标识符在 `PS1` 环境变量中不生效，只能用`\033`
+
+| 前景(3开头) | 背景(4开头) | 颜色  | ANSI控制码(结束标识\E[0m) |
+| ----------- | ----------- | ----- | ------------------------- |
+| 30          | 40          | 0黑色 | \E[30m\E[0m，\E[40m\E[0m  |
+| 31          | 41          | 1红色 | \E[31m\E[0m，\E[41m\E[0m  |
+| 32          | 42          | 2绿色 | \E[32m\E[0m，\E[42m\E[0m  |
+| 33          | 43          | 3黄色 | \E[33m\E[0m，\E[43m\E[0m  |
+| 34          | 44          | 4蓝色 | \E[34m\E[0m，\E[44m\E[0m  |
+| 35          | 45          | 5紫色 | \E[35m\E[0m，\E[45m\E[0m  |
+| 36          | 46          | 6天蓝 | \E[36m\E[0m，\E[46m\E[0m  |
+| 37          | 47          | 7白色 | \E[37m\E[0m，\E[47m\E[0m  |
+
+### 命令行控制码
+
+| 控制码    | 说明                                 |
+| --------- | ------------------------------------ |
+| \033[0m   | 关闭所有属性，即属性结束标识         |
+| \033[01m  | **设置高亮度，即字体加粗、文体强调** |
+| \033[03m  | *设置倾斜*                           |
+| \033[04m  | 下划线                               |
+| \033[05m  | 闪烁                                 |
+| \033[07m  | 反显                                 |
+| \033[08m  | 消隐                                 |
+| \033[09m  | 文字中划线                           |
+| \033[3nm  | 设置前景色(0 ≤ n ≤ 7)                |
+| \033[4nm  | 设置背景色(0 ≤ n ≤ 7)                |
+| \033[nA   | 光标上移n行                          |
+| \033[nB   | 光标下移n行                          |
+| \033[nC   | 光标右移n行                          |
+| \033[nD   | 光标左移n行                          |
+| \033[y;xH | 设置光标位置                         |
+| \033[2J   | 清屏                                 |
+| \033[K    | 清除从光标到行尾的内容               |
+| \033[s    | 保存光标位置                         |
+| \033[u    | 恢复光标位置                         |
+| \033[?25l | 隐藏光标                             |
+| \033[?25h | 显示光标                             |
 
 ## VIM编辑器
 
@@ -980,7 +1077,7 @@ sudo ufw allow proto tcp from 192.168.0.0/24 to any port 22
 sudo ufw delete allow/deny 3690
 ```
 
-## Ctrl 键组合
+## Ctrl键组合
 
 > [linux下的ctrl快捷键使用](https://blog.csdn.net/qq_36663951/article/details/79928439)
 
@@ -1044,6 +1141,142 @@ SELinux(Security-Enhanced Linux)是一种安全增强型的Linux内核安全模�
    - /24的网络本身就是一个较小的子网，不需要进一步划分。
 
 172.17.0.0/16和172.17.0.0/24的主要区别在于子网掩码、网络前缀位数以及可用IP地址范围。/16提供了更大的地址空间和更灵活的子网划分能力，而/24则是一个较小且简单的网络。
+
+## XDG标准
+
+我们讨论的是 `/etc/xdg` 目录的用途。这个目录不是 pip 专用的，而是遵循 XDG Base Directory Specification 的应用程序存放系统级配置文件的地方。让我详细解释一下：
+### XDG 规范是什么？
+XDG（Cross-Desktop Group）Base Directory Specification 是一个由 freedesktop.org 制定的标准，旨在统一Linux及其他类Unix系统中应用程序存放配置文件、缓存文件等的位置。这样做的目的是避免用户主目录下出现大量以点（.）开头的隐藏文件和目录（即“点文件污染”）。
+### 核心目录定义
+规范定义了以下几个环境变量（及其默认值）：
+- `XDG_CONFIG_HOME`：用户级别的配置目录（默认：`~/.config`）
+- `XDG_CONFIG_DIRS`：系统级别的配置目录列表（默认：`/etc/xdg`）
+- `XDG_DATA_HOME`：用户级别的数据文件目录（默认：`~/.local/share`）
+- `XDG_DATA_DIRS`：系统级别的数据文件目录列表（默认：`/usr/local/share/:/usr/share/`）
+- `XDG_CACHE_HOME`：用户级别的缓存目录（默认：`~/.cache`）
+### `/etc/xdg` 的作用
+- 它是 `XDG_CONFIG_DIRS` 的默认值之一（通常排在首位）。
+- 系统管理员可以在该目录下为所有用户提供默认的应用程序配置文件。
+- 应用程序在查找配置时，会按照以下顺序（优先级递增）：
+  1. 系统级配置：`/etc/xdg`（以及`XDG_CONFIG_DIRS`中的其他目录）
+  2. 用户级配置：`$XDG_CONFIG_HOME`（通常是`~/.config`）
+### pip 对 XDG 规范的遵循
+pip 从版本 6.0 开始遵循 XDG 规范：
+- 用户级配置：`$XDG_CONFIG_HOME/pip/pip.conf`（即`~/.config/pip/pip.conf`）
+- 系统级配置：`$XDG_CONFIG_DIRS/pip/pip.conf`（即`/etc/xdg/pip/pip.conf`）
+### 其他使用 `/etc/xdg` 的应用程序示例
+- 窗口管理器（如 i3, awesomewm）
+- 桌面环境（如 KDE, XFCE）
+- 其他开发工具（如 Qt 应用程序）
+  例如：
+  - `/etc/xdg/autostart/`：存放系统级自启动项
+  - `/etc/xdg/menus/`：存放系统级菜单配置
+### 在 Deepin 系统中的表现
+Deepin 作为基于 Debian 的发行版，同样遵循 XDG 规范。因此：
+- 系统管理员可以在 `/etc/xdg` 下放置配置文件，这些配置会影响到所有用户。
+- 如果某个应用程序（如 pip）在 `/etc/xdg` 中有配置，那么所有用户都会继承这些配置，除非用户在自己的 `~/.config` 目录下覆盖了配置。
+### 如何查看当前 XDG 环境变量
+在终端中运行：
+```bash
+echo "XDG_CONFIG_HOME: $XDG_CONFIG_HOME"
+echo "XDG_CONFIG_DIRS: $XDG_CONFIG_DIRS"
+```
+如果没有设置，则使用默认值。
+### 总结
+- `/etc/xdg` 是系统级配置目录，遵循 XDG 规范，不是 pip 专用的。
+- pip 只是众多遵循该规范的应用程序之一。
+- 这种设计使得系统配置更加统一和清晰。
+通过理解 XDG 规范，您可以更好地管理 Linux 系统中各种应用程序的配置文件。
+
+## 权限
+
+### 管道符的权限
+
+```
+sudo ls > /root/somefile 和 ls | sudo tee /root/somefile 有什么区别？
+```
+
+这两个命令虽然目的相似(将 `ls` 的输出写入 `/root/somefile`)，但**权限执行逻辑**和**潜在风险**存在本质区别：
+
+#### **`sudo ls > /root/somefile` 的潜在问题**
+```bash
+sudo ls > /root/somefile
+```
+##### 关键矛盾点：
+* **权限分离**：  
+  `sudo` 仅提升 `ls` 命令的权限(以 root 身份列出文件)，但**重定向符 `>` 是由当前 shell 解释执行的**。  
+  - 如果当前用户**无权限写入 `/root`**(默认只有 root 有写权限)，`>` 操作会因权限不足失败，**即使 `ls` 本身以 root 权限运行**。  
+  - 实际执行流程：  
+    ```
+    当前用户 shell (权限低) → 尝试创建/写入 /root/somefile (失败)  
+    └── 即使 ls 通过 sudo 以 root 列出文件，输出仍无法保存到受保护路径
+    ```
+
+##### 示例验证：
+```bash
+# 以普通用户执行(假设无 /root 写入权限)
+$ sudo ls > /root/somefile
+bash: /root/somefile: Permission denied  # 重定向失败
+```
+
+#### **`ls | sudo tee /root/somefile` 的优势**
+```bash
+ls | sudo tee /root/somefile
+```
+##### 关键差异点：
+* **权限分离优化**：  
+  `tee` 命令通过 `sudo` 获得 root 权限，负责写入文件；`ls` 本身无需 root 权限(除非需要列出受保护目录)。  
+  - `|` 管道符将 `ls` 的输出传递给 `sudo tee`，**`tee` 在 root 权限下执行文件写入**。  
+  - 实际执行流程：  
+    ```
+    当前用户 shell (权限低) → ls 输出内容  
+    ↓ 管道传递  
+    sudo tee (权限高) → 成功写入 /root/somefile
+    ```
+
+##### 示例验证：
+```bash
+# 以普通用户执行(无需 /root 写入权限)
+$ ls | sudo tee /root/somefile  # 成功创建文件
+```
+
+#### **更复杂场景的对比**
+##### 场景：需要 `ls` 本身以 root 权限运行(例如列出 `/root` 目录内容)
+```bash
+# 正确方式：同时提升 ls 和 tee 的权限
+sudo ls /root | sudo tee /root/somefile
+```
+
+##### 错误变体：
+```bash
+sudo ls /root > /root/somefile  # 仍可能因重定向权限失败
+```
+
+#### **总结：核心区别**
+| 特性             | `sudo ls > file`    | `ls | sudo tee file`    |
+| ---------------- | ------------------- | ----------------------- |
+| **权限提升范围** | 仅 `ls`             | 仅 `tee`                |
+| **重定向权限**   | 当前 shell 权限     | root 权限               |
+| **适用场景**     | 无需写入受保护路径  | 需要写入受保护路径      |
+| **典型错误**     | `Permission denied` | 无(假设 `tee` 权限足够) |
+
+#### **扩展建议**
+* **最小权限原则**：  
+  避免无谓的 `sudo`，仅在必要时提升权限。  
+  - 若 `ls` 不需要 root 权限(如列出普通目录)，直接使用：  
+    ```bash
+    ls | sudo tee /root/somefile  # 仅 tee 需要 root
+    ```
+  - 若 `ls` 需要列出受保护目录(如 `/root`)，则需：  
+    ```bash
+    sudo ls /root | sudo tee /root/somefile
+    ```
+
+* **替代方案**：  
+  使用 `sudo sh -c` 包裹整个命令链，确保所有操作在 root 上下文中执行：  
+  ```bash
+  sudo sh -c 'ls > /root/somefile'  # 强制整个命令以 root 运行
+  ```[citation:5][citation:7][citation:13][citation:22]
 
 # SSH终端
 
@@ -2112,7 +2345,7 @@ echo "子脚本的其他命令执行成功。"
 
 #### 核心思路
 通过检查 **调用来源** 或 **进程树** 判断脚本的执行方式：
-- 若脚本被直接运行，其父进程通常是终端（如 `mintty`、`bash` 或 `cmd.exe`）。
+- 若脚本被直接运行，其父进程通常是终端(如 `mintty`、`bash` 或 `cmd.exe`)。
 - 若脚本被其他脚本调用，父进程可能是另一个脚本的进程。
 
 #### 通过 `BASH_SOURCE` 判断调用层级
@@ -2131,20 +2364,20 @@ fi
 parent_comm=$(ps -p $PPID -o comm=)
 case "$parent_comm" in
   mintty*|bash|sh|cmd.exe|conhost.exe)
-    echo "用户直接运行（父进程是终端或Shell）"
+    echo "用户直接运行(父进程是终端或Shell)"
     ;;
   *)
-    echo "可能被其他脚本调用（父进程是 $parent_comm）"
+    echo "可能被其他脚本调用(父进程是 $parent_comm)"
     ;;
 esac
 ```
 - **原理**：  
-  使用 `ps -p $PPID` 获取父进程名称。若父进程是终端（如 `mintty`）或交互式 Shell（如 `bash`），则可能是用户直接运行。
+  使用 `ps -p $PPID` 获取父进程名称。若父进程是终端(如 `mintty`)或交互式 Shell(如 `bash`)，则可能是用户直接运行。
 
 #### 结合 `$0` 和 `$$` 检测独立进程
 ```bash
 if [[ "$(basename "$0")" != "bash" && "$0" != "-bash" ]]; then
-  echo "脚本作为独立进程运行（直接执行或被其他脚本启动）"
+  echo "脚本作为独立进程运行(直接执行或被其他脚本启动)"
 else
   echo "脚本被 source 或在交互式 Shell 中执行"
 fi
@@ -2152,7 +2385,7 @@ fi
 - **原理**：  
   直接执行的脚本 `$0` 为脚本路径；被 `source` 或交互式 Shell 中运行时，`$0` 为 `bash`。
 
-#### 检查进程调用链（推荐）
+#### 检查进程调用链(推荐)
 ```bash
 # 获取父进程的命令行参数
 parent_cmd=$(ps -p $PPID -o args=)
@@ -2160,7 +2393,7 @@ current_script=$(basename "$0")
 
 # 判断父进程是否包含其他脚本
 if [[ "$parent_cmd" == *"$current_script"* ]]; then
-  echo "递归调用（自身被自己调用）"
+  echo "递归调用(自身被自己调用)"
 elif [[ "$parent_cmd" == *"bash"* && "$parent_cmd" != *"$current_script"* ]]; then
   echo "可能被其他脚本调用"
 else
@@ -3886,7 +4119,7 @@ yum repolist all
 yum -y update
 ```
 
-# 虚拟机Linux
+# Linux虚拟机
 
 > 所有Linux虚拟机的密码：cos7
 
@@ -3938,60 +4171,19 @@ vi /etc/sysconfig/selinux
   - 参考: [解决Xshell连不上virtualBox虚拟机的解决方法](https://www.jb51.net/article/229502.htm)
 
 
-## 命令行颜色总结
+## 虚拟机网络模式
 
-> 表格形式; `\E` 标识符在 `PS1` 环境变量中不生效，只能用`\033`
-
-| 前景(3开头) | 背景(4开头) | 颜色  | ANSI控制码(结束标识\E[0m) |
-| ----------- | ----------- | ----- | ------------------------- |
-| 30          | 40          | 0黑色 | \E[30m\E[0m，\E[40m\E[0m  |
-| 31          | 41          | 1红色 | \E[31m\E[0m，\E[41m\E[0m  |
-| 32          | 42          | 2绿色 | \E[32m\E[0m，\E[42m\E[0m  |
-| 33          | 43          | 3黄色 | \E[33m\E[0m，\E[43m\E[0m  |
-| 34          | 44          | 4蓝色 | \E[34m\E[0m，\E[44m\E[0m  |
-| 35          | 45          | 5紫色 | \E[35m\E[0m，\E[45m\E[0m  |
-| 36          | 46          | 6天蓝 | \E[36m\E[0m，\E[46m\E[0m  |
-| 37          | 47          | 7白色 | \E[37m\E[0m，\E[47m\E[0m  |
-
-## 命令行控制码
-
-| 控制码    | 说明                                 |
-| --------- | ------------------------------------ |
-| \033[0m   | 关闭所有属性，即属性结束标识         |
-| \033[01m  | **设置高亮度，即字体加粗、文体强调** |
-| \033[03m  | *设置倾斜*                           |
-| \033[04m  | 下划线                               |
-| \033[05m  | 闪烁                                 |
-| \033[07m  | 反显                                 |
-| \033[08m  | 消隐                                 |
-| \033[09m  | 文字中划线                           |
-| \033[3nm  | 设置前景色(0 ≤ n ≤ 7)                |
-| \033[4nm  | 设置背景色(0 ≤ n ≤ 7)                |
-| \033[nA   | 光标上移n行                          |
-| \033[nB   | 光标下移n行                          |
-| \033[nC   | 光标右移n行                          |
-| \033[nD   | 光标左移n行                          |
-| \033[y;xH | 设置光标位置                         |
-| \033[2J   | 清屏                                 |
-| \033[K    | 清除从光标到行尾的内容               |
-| \033[s    | 保存光标位置                         |
-| \033[u    | 恢复光标位置                         |
-| \033[?25l | 隐藏光标                             |
-| \033[?25h | 显示光标                             |
-
-# 虚拟机网络模式
-
-## 各种模式的互通性
+### 各种模式的互通性
 
 ![image-20240513111632954](Linux.assets/image-20240513111632954.png)
 
-## 地址转换NAT
+### 地址转换NAT
 
 在NAT网络模式下，虚拟机可以通过路由器为设备分配私有地址，并将其转换为公网地址以实现外部网络访问。
 
 ![image-20240513112120553](Linux.assets/image-20240513112120553.png)
 
-## 桥接Bridged
+### 桥接Bridged
 
 桥接模式就是让虚拟机和宿主机都连接宿主机的路由器，用共同路由器管理网络，即宿主机遇这些虚拟机平级存在
 
@@ -3999,7 +4191,7 @@ vi /etc/sysconfig/selinux
 
 ![image-20240513112455525](Linux.assets/image-20240513112455525.png)
 
-## 内部网络Internal
+### 内部网络Internal
 
 内部网络模式则是一种隔离的网络环境，虚拟机可以相互通信，但无法与宿主和网络连接。
 
@@ -4007,7 +4199,7 @@ vi /etc/sysconfig/selinux
 
 ![image-20240513111102271](Linux.assets/image-20240513111102271.png)
 
-## 仅主机HostOnly
+### 仅主机HostOnly
 
 仅主机模式则是完全隔离的网络环境，虚拟机无法与主机、网络或其他虚拟机通信。？
 
@@ -4226,3 +4418,354 @@ https://linuxword.com/wp-content/uploads/PVE/CentOS7-YUM.zip
 1、由于CentoS7源停止了更新，阿里源在线更新速度太慢，也缺少第三方yum源，因此基于VmShell国际线路搭建一台yum源服务器满足这一需求，同时网络层面策略只允许此yum源服务器每周日晚限时联网同步阿里云的yum源保持最新。
 2、准备亚洲服务器用作yum源服务器。
 3、系统版本：CentOS 7.9
+
+
+
+# 系统问题记录
+
+## Deepin
+
+### 全局alias
+
+> alias修改路径：sudo vi /etc/profile.d/global_aliases.sh
+
+1. 脚本
+
+   ```bash
+   #!/bin/bash
+   # Global Alias Configuration Script
+   # Purpose: Create system-wide aliases that work for all users
+   # Execution: Must be run with root privileges
+   
+   # Verify root privileges
+   if [ "$(id -u)" -ne 0 ]; then
+       echo "Error: This script must be run as root!"
+       echo "Please execute with sudo: sudo $0"
+       exit 1
+   fi
+   
+   # Configuration file details
+   ALIAS_FILE="/etc/profile.d/global_aliases.sh"
+   
+   # Backup existing configuration if present
+   if [ -f "$ALIAS_FILE" ]; then
+       BACKUP_FILE="${ALIAS_FILE}.bak.$(date +%Y%m%d%H%M%S)"
+       cp -v "$ALIAS_FILE" "$BACKUP_FILE"
+       echo -e "\nExisting configuration backed up to: $BACKUP_FILE"
+   fi
+   
+   # Create/replace global alias configuration
+   cat > "$ALIAS_FILE" << 'EOF'
+   #!/bin/bash
+   # Global Alias Configuration (effective for all users)
+   # Generated by global alias setup script
+   # Created: $(date)
+   
+   # ======================
+   # Command Enhancements
+   # ======================
+   alias ll='ls -AlFh --color=auto --time-style=long-iso'
+   alias la='ls -Ah'
+   alias l='ls -CF'
+   alias grep='grep --color=auto'
+   alias egrep='egrep --color=auto'
+   alias fgrep='fgrep --color=auto'
+   alias cls='clear'
+   
+   alias src='source'
+   
+   # ======================
+   # Safe Operations
+   # ======================
+   alias cp='cp -i'
+   alias mv='mv -i'
+   alias rm='rm -i'
+   
+   # ======================
+   # System Monitoring
+   # ======================
+   alias meminfo='free -m -l -t'
+   alias cpuinfo='lscpu'
+   alias disk='df -hT -x tmpfs -x devtmpfs --total'
+   alias psmem='ps auxf | sort -nr -k 4 | head -10'
+   alias pscpu='ps auxf | sort -nr -k 3 | head -10'
+   
+   # ======================
+   # Network Tools
+   # ======================
+   alias ports='netstat -tulanp'
+   alias ping='ping -c 4'
+   alias myip='curl -s ifconfig.me; echo'
+   
+   # ======================
+   # Package Management (Deepin compatible)
+   # ======================
+   alias update='sudo apt update && sudo apt list --upgradable'
+   alias upgrade='sudo apt upgrade -y'
+   alias install='sudo apt install -y'
+   alias remove='sudo apt remove -y'
+   alias purge='sudo apt purge -y'
+   
+   # ======================
+   # System Administration
+   # ======================
+   alias reboot='sudo reboot'
+   alias poweroff='sudo poweroff'
+   alias service='sudo systemctl'
+   
+   # ======================
+   # Development Tools
+   # ======================
+   alias gits='git status'
+   alias gitl='git log --oneline --graph --decorate -n 10'
+   EOF
+   
+   # Set proper file permissions
+   chmod 644 "$ALIAS_FILE"
+   
+   # Display status
+   echo -e "\nGlobal alias configuration created: $ALIAS_FILE"
+   echo -e "Configured aliases:\n"
+   
+   # List configured aliases
+   grep -E '^alias' "$ALIAS_FILE" | sed 's/alias //; s/=/ = /'
+   
+   # Activation instructions
+   echo -e "\n\033[32mConfiguration successful!\033[0m"
+   echo "New terminal sessions will automatically apply these aliases"
+   echo "To activate in current session, run:"
+   echo "  source $ALIAS_FILE"
+   
+   exit 0
+   ```
+
+2. 脚本使用
+
+   ```bash
+   sudo vi setup_global_aliases.sh
+   sudo bash setup_global_aliases.sh
+   ```
+
+### 启动ssh
+
+```bash
+sudo systemctl restart ssh
+sudo systemctl enable ssh    # 设置开机自启
+```
+
+### 设置静态IP
+
+#### 全局NetworkManager
+
+```bash
+sudo systemctl stop networking
+sudo systemctl disable networking
+
+sudo systemctl start NetworkManager
+sudo systemctl enable NetworkManager
+
+shrek@Deepin:~$ nmcli connection show
+NAME              UUID                                  TYPE      DEVICE 
+Wired Connection  d6846d57-cc09-37db-9491-ac0841f9f86c  ethernet  enp0s3 
+
+# 配置文件路径：/etc/NetworkManager/system-connections/
+sudo cp -v /etc/NetworkManager/system-connections/"Wired Connection.nmconnection" \
+~/"有线连接 1.nmconnection.$(date +%Y%m%d).bak"
+
+sudo vi "/etc/NetworkManager/system-connections/Wired Connection.nmconnection"
+```
+
+- Wired Connection.nmconnection
+
+  ```ini
+  # Wired Connection.nmconnection
+  [connection]
+  id=Wired Connection
+  type=ethernet
+  autoconnect=true
+  
+  [ipv4]
+  address1=192.168.1.100/24,192.168.1.1   # IP/掩码,网关
+  dns=223.5.5.5;8.8.8.8;                  # 多个DNS用分号分隔
+  method=manual                           # 关键：手动配置
+  
+  [ipv6]
+  method=ignore                           # 禁用IPv6
+  ```
+
+```bash
+# 重新加载配置
+sudo nmcli connection reload
+
+# 重启网络连接
+sudo nmcli connection down "Wired Connection" && \
+sudo nmcli connection up "Wired Connection"
+```
+
+```bash
+ip addr show | grep 192.168.1.100  # 检查IP
+ping -c 4 192.168.1.1              # 测试网关
+nslookup google.com                # 测试DNS
+```
+
+其他
+
+```bash
+# 查看错误日志
+journalctl -u NetworkManager -b -e
+
+# 临时启用DHCP恢复连接
+sudo nmcli connection modify "Wired Connection" ipv4.method auto
+sudo nmcli connection up "Wired Connection"
+```
+
+
+
+#### 全局networking
+
+1. 禁用
+
+   Deepin 默认使用 `NetworkManager` 管理网络
+
+   ```
+   sudo systemctl stop NetworkManager
+   sudo systemctl disable NetworkManager
+   ```
+
+2. 编辑配置文件`/etc/network/interfaces`，添加：
+
+   ```
+   auto enp0s3
+   iface enp0s3 inet static
+   address 192.168.1.100
+   netmask 255.255.255.0
+   gateway 192.168.1.1
+   dns-nameservers 114.114.114.114 8.8.8.8
+   ```
+
+   > 注释掉 `source-directory /etc/network/interfaces.d` 以避免冲突
+
+3. 配置持久化 DNS
+
+   ```
+   sudo apt install resolvconf
+   sudo nano /etc/resolvconf/resolv.conf.d/head  # 添加 nameserver 114.114.114.114
+   sudo resolvconf -u  # 更新配置:cite[2]
+   ```
+
+4. 重启网络服务
+
+   ```
+   sudo systemctl restart NetworkManager  # 优先尝试
+   sudo /etc/init.d/networking restart    # 备用
+   ```
+
+### 新增用户
+
+```bash
+# 新增用户
+sudo adduser server
+grep server /etc/passwd
+ls -l /home/server
+
+# 添加sudo权限
+sudo usermod -aG sudo server
+sudo -l
+
+# 删除用户
+sudo deluser --remove-home server
+```
+
+### vi/vim禁用鼠标
+
+配置vi全局禁用鼠标
+
+```bash
+sudo vi /etc/vim/vimrc
+---
+set nocompatible #该配置在文件顶部
+set mouse=
+set ttymouse=
+
+sudo vi /etc/vim/exrc
+---
+set mouse=
+
+sudo sed -i '/set mouse/d' /home/*/.vimrc 2>/dev/null
+sudo sed -i '/set ttymouse/d' /home/*/.vimrc 2>/dev/null
+```
+
+#### 配置文件加载规则
+
+<img src="./Linux.assets/image-20250726125259461.png" alt="image-20250726125259461" style="zoom:67%;" />
+
+```mermaid
+graph TD
+    System["系统级配置<br>/etc/vim/vimrc"] --> Vim["vim"]
+    System --> Vi["vi"]
+    User["用户级配置<br>~/.vimrc"] --> Vim
+    User -->|部分兼容| Vi
+    Legacy["传统配置<br>~/.exrc"] -->|完全兼容| Vi
+```
+
+```bash
+shrek@Deepin:~$ ls -l /usr/bin/vi
+lrwxrwxrwx 1 root root 20 Jun 20  2024 /usr/bin/vi -> /etc/alternatives/vi
+
+shrek@Deepin:~$ ls -l /etc/alternatives/vi
+lrwxrwxrwx 1 root root 18 Jun 20  2024 /etc/alternatives/vi -> /usr/bin/vim.basic
+
+shrek@Deepin:~$ ls -l /usr/bin/vim.basic
+-rwxr-xr-x 1 root root 2556984 Nov 28  2022 /usr/bin/vim.basic
+
+shrek@Deepin:~$ vim --version | grep "Vi IMproved"
+VIM - Vi IMproved 8.1 (2018 May 18, compiled Nov 28 2022 06:54:26)
+```
+
+| 程序    | 用户级配置                             | 系统级配置       | 特殊行为                          |
+| :------ | :------------------------------------- | :--------------- | :-------------------------------- |
+| **vim** | `~/.vimrc`                             | `/etc/vim/vimrc` | 优先用户级配置                    |
+| **vi**  | `~/.vimrc` → 受限 `~/.exrc` → 完全兼容 | `/etc/vim/vimrc` | 在兼容模式下忽略部分 Vim 特有配置 |
+
+| 项目         | vim                                                 | vi                            |
+| :----------- | :-------------------------------------------------- | :---------------------------- |
+| **配置文件** | `~/.vimrc` + `/etc/vim/vimrc`                       | `~/.vimrc`(受限) + `~/.exrc`  |
+| **鼠标配置** | 通过 `set mouse=` 禁用                              | 需额外在 `/etc/vim/exrc` 配置 |
+| **推荐操作** | **修改 `/etc/vim/vimrc` 并添加 `set nocompatible`** |                               |
+
+### 开机终端登录
+
+```
+deepin 20.9 怎么合理的禁止桌面组件加载，即开机之后显示的是终端登录，而不是图形界面的登录
+```
+
+#### 关闭UI桌面系统
+
+```bash
+# 将系统默认目标设置为多用户模式（无图形界面）
+sudo systemctl set-default multi-user.target
+
+# 验证命令 应返回 multi-user.target
+systemctl get-default
+
+sudo reboot
+```
+
+#### 开启UI桌面系统
+
+```bash
+sudo systemctl set-default graphical.target  # 设置默认目标为图形模式
+sudo service lightdm start                  # 立即启动
+```
+
+### dpkg卸载
+
+```
+dpkg -l | grep mysql
+sudo apt --fix-broken install
+sudo apt autoremove
+sudo dpkg --purge --force-depends mariadb-common mysql-common:i386 libmariadb3:amd64 libmysqlclient20:i386
+sudo dpkg --purge mysql-community-server:i386
+sudo dpkg --remove mysql-community-server
+```
+
